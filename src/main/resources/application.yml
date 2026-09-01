@@ -10,4 +10,21 @@ openapi:
   version: '@project.version@'
 spring:
   application:
-    name: template
+    name: api-service-access-loader
+  security:
+    oauth2:
+      client:
+        registration:
+          mdviewer:
+            authorization-grant-type: client_credentials
+            provider: mdviewer
+          employee:
+            authorization-grant-type: client_credentials
+            provider: employee
+integration:
+  mdviewer:
+    connect-timeout: 5
+    read-timeout: 30
+  employee:
+    connect-timeout: 5
+    read-timeout: 30

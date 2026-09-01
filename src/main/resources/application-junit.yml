@@ -1,6 +1,40 @@
+
 #========================================
 # Test profile settings (junit tests)
 #========================================
 logging:
   level:
     root: DEBUG
+spring:
+  security:
+    oauth2:
+      client:
+        provider:
+          mdviewer:
+            token-uri: http://localhost:8080/token
+          employee:
+            token-uri: http://localhost:8080/token
+        registration:
+          mdviewer:
+            client-id: mdviewer-client-id
+            client-secret: mdviewer-client-secret
+            authorization-grant-type: client_credentials
+          employee:
+            client-id: employee-client-id
+            client-secret: employee-client-secret
+            authorization-grant-type: client_credentials
+integration:
+  mdviewer:
+    url: http://localhost:8080
+    oauth2-token-grant-url: http://localhost:8080/token
+    oauth2-client-id: mdviewer-client-id
+    oauth2-client-secret: mdviewer-client-secret
+    connect-timeout: 5
+    read-timeout: 30
+  employee:
+    url: http://localhost:8080
+    oauth2-token-grant-url: http://localhost:8080/token
+    oauth2-client-id: employee-client-id
+    oauth2-client-secret: employee-client-secret
+    connect-timeout: 5
+    read-timeout: 30

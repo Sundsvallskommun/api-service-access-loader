@@ -1,0 +1,700 @@
+openapi: 3.0.1
+info:
+  title: MD Viewer API
+  description: Hanterar visning av organisation mm för MasterData
+  version: v1
+servers:
+  - url: /
+tags:
+  - name: MDViewer
+    description: Handles information about organizations
+paths:
+  /{personId}/employeedetails:
+    get:
+      tags:
+        - Employment
+      parameters:
+        - name: personId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+            format: uuid
+      responses:
+        "200":
+          description: Success
+          content:
+            text/plain:
+              schema:
+                $ref: "#/components/schemas/MDVEmployee"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/MDVEmployee"
+            text/json:
+              schema:
+                $ref: "#/components/schemas/MDVEmployee"
+  /{orgId}/employees:
+    get:
+      tags:
+        - Employment
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MDVEmployee"
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MDVEmployee"
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MDVEmployee"
+  /{orgId}/employeesallleaves:
+    get:
+      tags:
+        - Employment
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MDVEmployee"
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MDVEmployee"
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/MDVEmployee"
+  /api-docs:
+    get:
+      tags:
+        - MDViewer
+      summary: OpenAPI specification
+      responses:
+        "200":
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: string
+            application/json:
+              schema:
+                type: string
+            text/json:
+              schema:
+                type: string
+  /{orgId}/operation:
+    get:
+      tags:
+        - Operation
+      summary: Visar verksamheter kopplade till angivet orgid
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrgOperation"
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrgOperation"
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrgOperation"
+  /{orgId}/operationallleaves:
+    get:
+      tags:
+        - Operation
+      summary: Visar verksamheter kopplade till angivet orgid samt alla undernoder
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrgOperation"
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrgOperation"
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrgOperation"
+  /root:
+    get:
+      tags:
+        - Organization
+      summary: Hämtar alla root-nivåer i trädet (i.e. company)
+      responses:
+        "200":
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Organization"
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Organization"
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Organization"
+  /{companyId}/company:
+    get:
+      tags:
+        - Organization
+      summary: Hämtar alla orgnoder för visst bolag. Platt struktur
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Organization"
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Organization"
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Organization"
+  /{orgId}/orgtree:
+    get:
+      tags:
+        - Organization
+      summary: "Hämtar ett hierarkist/nästlat träd, med start på givet orgid"
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int32
+        - name: view
+          in: query
+          required: false
+          style: form
+          explode: true
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Success
+          content:
+            text/plain:
+              schema:
+                $ref: "#/components/schemas/OrganizationTree"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationTree"
+            text/json:
+              schema:
+                $ref: "#/components/schemas/OrganizationTree"
+  /{orgId}/responsibilitys:
+    get:
+      tags:
+        - Responsibility
+      summary: Hämtar alla ansvar direkt kopplade till givet orgid (ej undernoder)
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrganizationResponsibility"
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrganizationResponsibility"
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrganizationResponsibility"
+  /{orgId}/responsibilitysallleaves:
+    get:
+      tags:
+        - Responsibility
+      summary: Hämtar alla ansvar kopplade till givet orgid samt alla undernoder
+      parameters:
+        - name: orgId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrganizationResponsibility"
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrganizationResponsibility"
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrganizationResponsibility"
+  /{companyId}/responsibilitysallcompany:
+    get:
+      tags:
+        - Responsibility
+      summary: Hämtar alla ansvar för ett bolag
+      parameters:
+        - name: companyId
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: integer
+            format: int32
+      responses:
+        "200":
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrganizationResponsibility"
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrganizationResponsibility"
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/OrganizationResponsibility"
+  /{searchString}/search:
+    get:
+      tags:
+        - Search
+      summary: "Supersök på person, organisation och ansvar"
+      parameters:
+        - name: searchString
+          in: path
+          required: true
+          style: simple
+          explode: false
+          schema:
+            type: string
+      responses:
+        "200":
+          description: Success
+          content:
+            text/plain:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ObjectSearchResult"
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ObjectSearchResult"
+            text/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/ObjectSearchResult"
+        "400":
+          description: Bad Request
+          content:
+            text/plain:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+            application/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+            text/json:
+              schema:
+                $ref: "#/components/schemas/ProblemDetails"
+components:
+  schemas:
+    Email:
+      required:
+        - emailSystem
+      type: object
+      properties:
+        smtpAddress:
+          type: string
+          nullable: true
+        emailSystem:
+          minLength: 1
+          type: string
+      additionalProperties: false
+    Login:
+      required:
+        - displayname
+      type: object
+      properties:
+        loginname:
+          type: string
+          nullable: true
+        displayname:
+          minLength: 1
+          type: string
+      additionalProperties: false
+    MDVEmployee:
+      type: object
+      properties:
+        personId:
+          type: string
+          format: uuid
+        personNumber:
+          type: string
+          nullable: true
+        classified:
+          type: string
+          nullable: true
+        givenname:
+          type: string
+          nullable: true
+        lastname:
+          type: string
+          nullable: true
+        friendlyGivenname:
+          type: string
+          nullable: true
+        orgId:
+          type: integer
+          format: int32
+        workPhone:
+          type: string
+          nullable: true
+        workMobile:
+          type: string
+          nullable: true
+        loginname:
+          type: string
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        isManual:
+          type: boolean
+        logins:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/Login"
+        emails:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/Email"
+        employments:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/MDVEmployment"
+      additionalProperties: false
+    MDVEmployment:
+      type: object
+      properties:
+        title:
+          type: string
+          nullable: true
+        hireDate:
+          type: string
+          format: date-time
+          nullable: true
+        retireDate:
+          type: string
+          format: date-time
+          nullable: true
+        paTeam:
+          type: string
+          nullable: true
+        department:
+          type: string
+          nullable: true
+        managerName:
+          type: string
+          nullable: true
+      additionalProperties: false
+    ObjectSearchResult:
+      type: object
+      properties:
+        objectType:
+          type: string
+          nullable: true
+        subObjectType:
+          type: string
+          nullable: true
+        id:
+          type: string
+          format: uuid
+        subId:
+          type: integer
+          format: int32
+          nullable: true
+        header:
+          type: string
+          nullable: true
+        text:
+          type: string
+          nullable: true
+      additionalProperties: false
+    OrgOperation:
+      type: object
+      properties:
+        orgOperationId:
+          type: string
+          format: uuid
+        orgId:
+          type: integer
+          format: int32
+        operationCode:
+          type: string
+          nullable: true
+        operationDescription:
+          type: string
+          nullable: true
+      additionalProperties: false
+    Organization:
+      type: object
+      properties:
+        organizationId:
+          type: string
+          format: uuid
+        orgId:
+          type: integer
+          format: int32
+        orgName:
+          type: string
+          nullable: true
+        orgNameShort:
+          type: string
+          nullable: true
+        abbreviation:
+          type: string
+          nullable: true
+        concatAbbreviation:
+          type: string
+          nullable: true
+        parentId:
+          type: integer
+          format: int32
+          nullable: true
+        isLeafLevel:
+          type: boolean
+        treeLevel:
+          type: integer
+          format: int32
+        responsibilityCode:
+          type: string
+          nullable: true
+        responsibilityCodePartList:
+          type: string
+          nullable: true
+        companyId:
+          type: integer
+          format: int32
+      additionalProperties: false
+    OrganizationResponsibility:
+      type: object
+      properties:
+        orgResponsibilityId:
+          type: string
+          format: uuid
+        responsibilityCode:
+          type: string
+          nullable: true
+        orgId:
+          type: integer
+          format: int32
+        responsibilityText:
+          type: string
+          nullable: true
+        responsibilityValidFrom:
+          type: string
+          format: date-time
+        companyId:
+          type: integer
+          format: int32
+        typeOfResponsibility:
+          $ref: "#/components/schemas/ResponsibilityType"
+        orgName:
+          type: string
+          nullable: true
+        orgFromName:
+          type: string
+          nullable: true
+      additionalProperties: false
+    OrganizationTree:
+      type: object
+      properties:
+        organizationId:
+          type: string
+          format: uuid
+        orgId:
+          type: integer
+          format: int32
+        treeLevel:
+          type: integer
+          format: int32
+        orgName:
+          type: string
+          nullable: true
+        orgNameShort:
+          type: string
+          nullable: true
+        abbreviation:
+          type: string
+          nullable: true
+        orgDisplayName:
+          type: string
+          nullable: true
+        parentId:
+          type: integer
+          format: int32
+        isLeafLevel:
+          type: boolean
+        responsibilityCode:
+          type: string
+          nullable: true
+        responsibilityList:
+          type: string
+          nullable: true
+        organizations:
+          type: array
+          nullable: true
+          items:
+            $ref: "#/components/schemas/OrganizationTree"
+      additionalProperties: false
+    ProblemDetails:
+      type: object
+      properties:
+        type:
+          type: string
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        status:
+          type: integer
+          format: int32
+          nullable: true
+        detail:
+          type: string
+          nullable: true
+        instance:
+          type: string
+          nullable: true
+      additionalProperties: {}
+    ResponsibilityType:
+      type: string
+      enum:
+        - ANSVAR
+        - LÖNEANSVAR
+        - PSEUDOANSVAR
