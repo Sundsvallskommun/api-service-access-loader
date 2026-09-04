@@ -8,23 +8,60 @@ openapi:
   name: ${spring.application.name}
   title: ${spring.application.name}
   version: '@project.version@'
+scheduler:
+  accessloader:
+    cron: '0 0 2 * * *'
+    name: access-loader
+    lock-at-most-for: PT15M
+    maximum-execution-time: PT15M
+    municipalities:
+      '2281':
+        namespaces:
+          MY_NAMESPACE:
+            org-ids:
+              - 1
+            access-level: R
 spring:
   application:
     name: api-service-access-loader
+  datasource:
+    driver-class-name: org.h2.Driver
+    url: jdbc:h2:mem:accessloader;MODE=MariaDB
+  flyway:
+    enabled: true
   security:
     oauth2:
       client:
+        provider:
+          mdviewer:
+            token-uri: ${integration.mdviewer.oauth2-token-grant-url}
+          employee:
+            token-uri: ${integration.employee.oauth2-token-grant-url}
+          access-mapper:
+            token-uri: ${integration.access-mapper.oauth2-token-grant-url}
         registration:
           mdviewer:
             authorization-grant-type: client_credentials
             provider: mdviewer
+            client-id: ${integration.mdviewer.oauth2-client-id}
+            client-secret: ${integration.mdviewer.oauth2-client-secret}
           employee:
             authorization-grant-type: client_credentials
             provider: employee
+            client-id: ${integration.employee.oauth2-client-id}
+            client-secret: ${integration.employee.oauth2-client-secret}
+          access-mapper:
+            authorization-grant-type: client_credentials
+            provider: access-mapper
+            client-id: ${integration.access-mapper.oauth2-client-id}
+            client-secret: ${integration.access-mapper.oauth2-client-secret}
 integration:
   mdviewer:
     connect-timeout: 5
     read-timeout: 30
   employee:
+    connect-timeout: 5
+    read-timeout: 30
+  access-mapper:
     connect-timeout: 5
     read-timeout: 30

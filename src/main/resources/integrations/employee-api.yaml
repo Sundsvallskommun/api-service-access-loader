@@ -446,10 +446,10 @@ components:
           format: int32
         startDate:
           type: string
-          format: date-time
+          example: '2024-04-01T00:00:00'
         endDate:
           type: string
-          format: date-time
+          example: '2024-04-01T00:00:00'
           nullable: true
         employmentType:
           type: integer
@@ -531,11 +531,11 @@ components:
           format: uuid
         hireDate:
           type: string
-          format: date-time
+          example: '2024-04-01T00:00:00'
           nullable: true
         retireDate:
           type: string
-          format: date-time
+          example: '2024-04-01T00:00:00'
           nullable: true
       additionalProperties: false
     ModelPostPersonImage:
@@ -592,10 +592,10 @@ components:
           format: int32
         startDate:
           type: string
-          format: date-time
+          example: '2024-04-01T00:00:00'
         endDate:
           type: string
-          format: date-time
+          example: '2024-04-01T00:00:00'
           nullable: true
         employmentType:
           type: integer

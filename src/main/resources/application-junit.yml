@@ -5,24 +5,16 @@
 logging:
   level:
     root: DEBUG
-spring:
-  security:
-    oauth2:
-      client:
-        provider:
-          mdviewer:
-            token-uri: http://localhost:8080/token
-          employee:
-            token-uri: http://localhost:8080/token
-        registration:
-          mdviewer:
-            client-id: mdviewer-client-id
-            client-secret: mdviewer-client-secret
-            authorization-grant-type: client_credentials
-          employee:
-            client-id: employee-client-id
-            client-secret: employee-client-secret
-            authorization-grant-type: client_credentials
+scheduler:
+  accessloader:
+    cron: '-'
+    municipalities:
+      '2281':
+        namespaces:
+          MY_NAMESPACE:
+            org-ids:
+              - 1
+            access-level: R
 integration:
   mdviewer:
     url: http://localhost:8080
@@ -36,5 +28,12 @@ integration:
     oauth2-token-grant-url: http://localhost:8080/token
     oauth2-client-id: employee-client-id
     oauth2-client-secret: employee-client-secret
+    connect-timeout: 5
+    read-timeout: 30
+  access-mapper:
+    url: http://localhost:8080
+    oauth2-token-grant-url: http://localhost:8080/token
+    oauth2-client-id: access-mapper-client-id
+    oauth2-client-secret: access-mapper-client-secret
     connect-timeout: 5
     read-timeout: 30

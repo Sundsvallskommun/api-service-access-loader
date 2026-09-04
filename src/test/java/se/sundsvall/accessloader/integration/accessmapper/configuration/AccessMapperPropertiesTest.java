@@ -1,4 +1,4 @@
-package se.sundsvall.accessloader.integration.mdviewer.configuration;
+package se.sundsvall.accessloader.integration.accessmapper.configuration;
 
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -14,10 +14,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @SpringBootTest(classes = Application.class)
 @ActiveProfiles("junit")
-class MdViewerPropertiesTest {
-
-	@MockitoBean
-	private AccessMapperClient accessMapperClient;
+class AccessMapperPropertiesTest {
 
 	@MockitoBean
 	private MdViewerClient mdViewerClient;
@@ -25,8 +22,11 @@ class MdViewerPropertiesTest {
 	@MockitoBean
 	private EmployeeClient employeeClient;
 
+	@MockitoBean
+	private AccessMapperClient accessMapperClient;
+
 	@Autowired
-	private MdViewerProperties properties;
+	private AccessMapperProperties properties;
 
 	@Test
 	void testProperties() {

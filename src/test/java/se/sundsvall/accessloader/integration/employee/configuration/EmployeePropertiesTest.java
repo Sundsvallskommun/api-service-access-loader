@@ -6,6 +6,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import se.sundsvall.accessloader.Application;
+import se.sundsvall.accessloader.integration.accessmapper.AccessMapperClient;
 import se.sundsvall.accessloader.integration.employee.EmployeeClient;
 import se.sundsvall.accessloader.integration.mdviewer.MdViewerClient;
 
@@ -14,6 +15,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @SpringBootTest(classes = Application.class)
 @ActiveProfiles("junit")
 class EmployeePropertiesTest {
+
+	@MockitoBean
+	private AccessMapperClient accessMapperClient;
 
 	@MockitoBean
 	private MdViewerClient mdViewerClient;

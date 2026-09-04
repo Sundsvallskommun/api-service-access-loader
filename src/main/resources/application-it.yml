@@ -4,3 +4,13 @@
 logging:
   level:
     root: DEBUG
+scheduler:
+  accessloader:
+    cron: '-'
+    municipalities:
+      '2281':
+        namespaces:
+          MY_NAMESPACE:
+            org-ids:
+              - 1
+            access-level: R
