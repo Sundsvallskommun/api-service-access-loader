@@ -32,8 +32,8 @@ class AccessLoaderSchedulerTest {
 	void execute() {
 		final var orgIds1 = List.of(1, 2);
 		final var orgIds2 = List.of(3);
-		final var ns1 = new NamespaceConfig(orgIds1, "R");
-		final var ns2 = new NamespaceConfig(orgIds2, "RW");
+		final var ns1 = new NamespaceConfig(orgIds1);
+		final var ns2 = new NamespaceConfig(orgIds2);
 
 		when(schedulerProperties.municipalities()).thenReturn(Map.of(
 			"2281", new MunicipalityConfig(Map.of("NS_A", ns1)),
@@ -42,8 +42,8 @@ class AccessLoaderSchedulerTest {
 		scheduler.execute();
 
 		verify(schedulerProperties).municipalities();
-		verify(accessLoaderService).syncAccessUsers("2281", "NS_A", orgIds1, "R");
-		verify(accessLoaderService).syncAccessUsers("2262", "NS_B", orgIds2, "RW");
+		verify(accessLoaderService).syncAccessUsers("2281", "NS_A", orgIds1);
+		verify(accessLoaderService).syncAccessUsers("2262", "NS_B", orgIds2);
 		verifyNoMoreInteractions(accessLoaderService, schedulerProperties);
 	}
 }

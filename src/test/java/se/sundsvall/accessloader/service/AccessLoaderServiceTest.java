@@ -14,6 +14,7 @@ import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
+import se.sundsvall.accessloader.configuration.AccessLoaderProperties;
 import se.sundsvall.accessloader.integration.accessmapper.AccessMapperClient;
 import se.sundsvall.accessloader.integration.employee.EmployeeClient;
 
@@ -40,6 +41,9 @@ class AccessLoaderServiceTest {
 
 	@Mock
 	private AccessMapperClient accessMapperClientMock;
+
+	@Mock
+	private AccessLoaderProperties accessLoaderPropertiesMock;
 
 	@InjectMocks
 	private AccessLoaderService accessLoaderService;
@@ -419,9 +423,9 @@ class AccessLoaderServiceTest {
 
 	@Test
 	void toAccessPattern() {
-		assertThat(AccessLoaderService.toAccessPattern("1/31/500/8603/10958/7221")).isEqualTo("LOCATION/31/500/8603/10958/7221");
-		assertThat(AccessLoaderService.toAccessPattern("8603/10958/7221")).isEqualTo("LOCATION/10958/7221");
-		assertThat(AccessLoaderService.toAccessPattern("100")).isEqualTo("LOCATION/100");
+		assertThat(AccessLoaderService.toAccessPattern("1/31/500/8603/10958/7221")).isEqualTo("LOCATION/31/500/8603/10958/7221/**");
+		assertThat(AccessLoaderService.toAccessPattern("8603/10958/7221")).isEqualTo("LOCATION/10958/7221/**");
+		assertThat(AccessLoaderService.toAccessPattern("100")).isEqualTo("LOCATION/100/**");
 	}
 
 	@Test
@@ -446,7 +450,9 @@ class AccessLoaderServiceTest {
 		when(employeeClientMock.getEmployments(MUNICIPALITY_ID, managerId.toString())).thenReturn(List.of(managerAsEmployee));
 		when(accessMapperClientMock.getAccessUsers(MUNICIPALITY_ID, NAMESPACE, "AUTOMATIC")).thenReturn(List.of());
 
-		accessLoaderService.syncAccessUsers(MUNICIPALITY_ID, NAMESPACE, List.of(orgId), "R");
+		when(accessLoaderPropertiesMock.accessLevel()).thenReturn("R");
+
+		accessLoaderService.syncAccessUsers(MUNICIPALITY_ID, NAMESPACE, List.of(orgId));
 
 		verify(accessMapperClientMock).createAccessUser(eq(MUNICIPALITY_ID), eq(NAMESPACE), any(AccessUser.class));
 		verify(accessMapperClientMock, never()).deleteAccessUser(any(), any(), any());
@@ -467,7 +473,7 @@ class AccessLoaderServiceTest {
 		when(mdViewerServiceMock.getOrgTree(orgId)).thenReturn(rootNode);
 		when(accessMapperClientMock.getAccessUsers(MUNICIPALITY_ID, NAMESPACE, "AUTOMATIC")).thenReturn(List.of(existingUser));
 
-		accessLoaderService.syncAccessUsers(MUNICIPALITY_ID, NAMESPACE, List.of(orgId), "R");
+		accessLoaderService.syncAccessUsers(MUNICIPALITY_ID, NAMESPACE, List.of(orgId));
 
 		verify(accessMapperClientMock).deleteAccessUser(MUNICIPALITY_ID, NAMESPACE, "existing-id");
 		verify(accessMapperClientMock, never()).createAccessUser(any(), any(), any());
@@ -503,7 +509,9 @@ class AccessLoaderServiceTest {
 		when(employeeClientMock.getEmployments(MUNICIPALITY_ID, managerId.toString())).thenReturn(List.of(managerAsEmployee));
 		when(accessMapperClientMock.getAccessUsers(MUNICIPALITY_ID, NAMESPACE, "AUTOMATIC")).thenReturn(List.of(existingUser));
 
-		accessLoaderService.syncAccessUsers(MUNICIPALITY_ID, NAMESPACE, List.of(orgId), "R");
+		when(accessLoaderPropertiesMock.accessLevel()).thenReturn("R");
+
+		accessLoaderService.syncAccessUsers(MUNICIPALITY_ID, NAMESPACE, List.of(orgId));
 
 		verify(accessMapperClientMock).updateAccessUser(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq("existing-id"), any(AccessUser.class));
 		verify(accessMapperClientMock, never()).createAccessUser(any(), any(), any());
@@ -526,12 +534,12 @@ class AccessLoaderServiceTest {
 		final var managerEmployment = new Employment().isMainEmployment(true);
 		final var managerAsEmployee = new Employeev2().personId(managerId).employments(List.of(managerEmployment));
 
-		// Existing user matches desired state: path "1/100" -> drop first -> "100" -> "LOCATION/100"
+		// Existing user matches desired state: path "1/100" -> drop first -> "100" -> "LOCATION/100/**"
 		final var existingUser = new AccessUser()
 			.id("existing-id")
 			.userId("boss01per")
 			.origin("AUTOMATIC")
-			.accessByType(List.of(new AccessType().type("label").access(List.of(new Access().pattern("LOCATION/100").accessLevel(Access.AccessLevelEnum.R)))));
+			.accessByType(List.of(new AccessType().type("label").access(List.of(new Access().pattern("LOCATION/100/**").accessLevel(Access.AccessLevelEnum.R)))));
 
 		when(mdViewerServiceMock.getOrgTree(orgId)).thenReturn(rootNode);
 		when(mdViewerServiceMock.getPersonIds(leafOrgId)).thenReturn(List.of("person-1"));
@@ -539,7 +547,9 @@ class AccessLoaderServiceTest {
 		when(employeeClientMock.getEmployments(MUNICIPALITY_ID, managerId.toString())).thenReturn(List.of(managerAsEmployee));
 		when(accessMapperClientMock.getAccessUsers(MUNICIPALITY_ID, NAMESPACE, "AUTOMATIC")).thenReturn(List.of(existingUser));
 
-		accessLoaderService.syncAccessUsers(MUNICIPALITY_ID, NAMESPACE, List.of(orgId), "R");
+		when(accessLoaderPropertiesMock.accessLevel()).thenReturn("R");
+
+		accessLoaderService.syncAccessUsers(MUNICIPALITY_ID, NAMESPACE, List.of(orgId));
 
 		verify(accessMapperClientMock).getAccessUsers(MUNICIPALITY_ID, NAMESPACE, "AUTOMATIC");
 		verify(accessMapperClientMock, never()).createAccessUser(any(), any(), any());
@@ -556,7 +566,7 @@ class AccessLoaderServiceTest {
 		when(mdViewerServiceMock.getOrgTree(orgId)).thenReturn(rootNode);
 		when(accessMapperClientMock.getAccessUsers(MUNICIPALITY_ID, NAMESPACE, "AUTOMATIC")).thenReturn(List.of());
 
-		accessLoaderService.syncAccessUsers(MUNICIPALITY_ID, NAMESPACE, List.of(orgId), "R");
+		accessLoaderService.syncAccessUsers(MUNICIPALITY_ID, NAMESPACE, List.of(orgId));
 
 		verify(accessMapperClientMock).getAccessUsers(MUNICIPALITY_ID, NAMESPACE, "AUTOMATIC");
 		verify(accessMapperClientMock, never()).deleteAccessUser(any(), any(), any());

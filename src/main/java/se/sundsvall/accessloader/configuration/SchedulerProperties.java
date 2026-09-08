@@ -10,6 +10,6 @@ public record SchedulerProperties(Map<String, MunicipalityConfig> municipalities
 	public record MunicipalityConfig(Map<String, NamespaceConfig> namespaces) {
 	}
 
-	public record NamespaceConfig(List<Integer> orgIds, String accessLevel) {
+	public record NamespaceConfig(List<Integer> orgIds) {
 	}
 }

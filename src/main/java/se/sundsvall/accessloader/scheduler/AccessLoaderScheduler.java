@@ -36,7 +36,7 @@ class AccessLoaderScheduler {
 				try {
 					RequestId.init();
 					LOG.info("Syncing access users for municipalityId: {}, namespace: {}", municipalityId, namespace);
-					accessLoaderService.syncAccessUsers(municipalityId, namespace, namespaceConfig.orgIds(), namespaceConfig.accessLevel());
+					accessLoaderService.syncAccessUsers(municipalityId, namespace, namespaceConfig.orgIds());
 				} catch (final Exception e) {
 					LOG.error("Error syncing access users for municipalityId: {}, namespace: {}", municipalityId, namespace, e);
 				} finally {

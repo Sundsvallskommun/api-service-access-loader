@@ -4,6 +4,8 @@
 logging:
   level:
     root: DEBUG
+accessloader:
+  access-level: R
 scheduler:
   accessloader:
     cron: '-'
@@ -13,4 +15,3 @@ scheduler:
           MY_NAMESPACE:
             org-ids:
               - 1
-            access-level: R

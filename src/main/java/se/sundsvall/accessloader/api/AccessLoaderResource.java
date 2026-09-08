@@ -57,4 +57,17 @@ class AccessLoaderResource {
 
 		return ok(result);
 	}
+
+	@PostMapping(path = "/sync", produces = APPLICATION_JSON_VALUE)
+	@Operation(summary = "Trigger access sync", description = "Triggers the full access sync for the given municipality, namespace and org IDs")
+	@ApiResponse(responseCode = "200", description = "Successful operation")
+	ResponseEntity<Void> syncAccessUsers(
+		@PathVariable @ValidMunicipalityId final String municipalityId,
+		@RequestParam final String namespace,
+		@RequestParam final List<Integer> orgIds) {
+
+		accessLoaderService.syncAccessUsers(municipalityId, namespace, orgIds);
+
+		return ok().build();
+	}
 }

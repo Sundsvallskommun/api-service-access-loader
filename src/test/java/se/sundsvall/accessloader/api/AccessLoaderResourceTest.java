@@ -1,5 +1,6 @@
 package se.sundsvall.accessloader.api;
 
+import java.util.List;
 import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -25,6 +26,7 @@ class AccessLoaderResourceTest {
 
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String PATH = "/{municipalityId}/access-loader";
+	private static final String SYNC_PATH = "/{municipalityId}/access-loader/sync";
 
 	@MockitoBean
 	private AccessLoaderService accessLoaderService;
@@ -53,6 +55,20 @@ class AccessLoaderResourceTest {
 		verify(accessLoaderService).resolveManagerHierarchy(MUNICIPALITY_ID, 1);
 		verify(accessLoaderService).resolveManagerHierarchy(MUNICIPALITY_ID, 2);
 		verify(accessLoaderService).resolveManagerHierarchy(MUNICIPALITY_ID, 3);
+		verifyNoMoreInteractions(accessLoaderService);
+	}
+
+	@Test
+	void syncAccessUsers() {
+		webTestClient.post()
+			.uri(builder -> builder.path(SYNC_PATH)
+				.queryParam("namespace", "MY_NAMESPACE")
+				.queryParam("orgIds", 1, 2)
+				.build(Map.of("municipalityId", MUNICIPALITY_ID)))
+			.exchange()
+			.expectStatus().isOk();
+
+		verify(accessLoaderService).syncAccessUsers(MUNICIPALITY_ID, "MY_NAMESPACE", List.of(1, 2));
 		verifyNoMoreInteractions(accessLoaderService);
 	}
 }

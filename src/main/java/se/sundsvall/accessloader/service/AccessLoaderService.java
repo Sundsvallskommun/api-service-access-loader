@@ -17,6 +17,7 @@ import java.util.stream.Collectors;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import se.sundsvall.accessloader.configuration.AccessLoaderProperties;
 import se.sundsvall.accessloader.integration.accessmapper.AccessMapperClient;
 import se.sundsvall.accessloader.integration.employee.EmployeeClient;
 import se.sundsvall.accessloader.service.model.ManagerWithInheritedPaths;
@@ -30,20 +31,23 @@ public class AccessLoaderService {
 	private static final int LEAF_TREE_LEVEL = 6;
 	private static final String PATH_DELIMITER = "/";
 	private static final String LOCATION_PREFIX = "LOCATION/";
+	private static final String WILDCARD_SUFFIX = "/**";
 	private static final String ACCESS_TYPE_LABEL = "label";
 	private static final String ORIGIN_AUTOMATIC = "AUTOMATIC";
 
 	private final MdViewerService mdViewerService;
 	private final EmployeeClient employeeClient;
 	private final AccessMapperClient accessMapperClient;
+	private final AccessLoaderProperties accessLoaderProperties;
 
-	AccessLoaderService(final MdViewerService mdViewerService, final EmployeeClient employeeClient, final AccessMapperClient accessMapperClient) {
+	AccessLoaderService(final MdViewerService mdViewerService, final EmployeeClient employeeClient, final AccessMapperClient accessMapperClient, final AccessLoaderProperties accessLoaderProperties) {
 		this.mdViewerService = mdViewerService;
 		this.employeeClient = employeeClient;
 		this.accessMapperClient = accessMapperClient;
+		this.accessLoaderProperties = accessLoaderProperties;
 	}
 
-	public void syncAccessUsers(final String municipalityId, final String namespace, final List<Integer> orgIds, final String accessLevel) {
+	public void syncAccessUsers(final String municipalityId, final String namespace, final List<Integer> orgIds) {
 		// 1. Resolve managers across all orgIds and merge
 		final var allManagers = new LinkedHashMap<UUID, ManagerWithInheritedPaths>();
 		for (final var orgId : orgIds) {
@@ -61,7 +65,7 @@ public class AccessLoaderService {
 			.filter(entry -> entry.manager().getLoginname() != null)
 			.collect(Collectors.toMap(
 				entry -> entry.manager().getLoginname(),
-				entry -> buildAccessUser(entry, accessLevel),
+										this::buildAccessUser,
 				(a, b) -> {
 					Optional.ofNullable(b.getAccessByType())
 						.stream()
@@ -113,10 +117,10 @@ public class AccessLoaderService {
 		});
 	}
 
-	private AccessUser buildAccessUser(final ManagerWithInheritedPaths entry, final String accessLevel) {
+	private AccessUser buildAccessUser(final ManagerWithInheritedPaths entry) {
 		final var accesses = entry.paths().stream()
 			.map(AccessLoaderService::toAccessPattern)
-			.map(pattern -> new Access().pattern(pattern).accessLevel(Access.AccessLevelEnum.fromValue(accessLevel)))
+			.map(pattern -> new Access().pattern(pattern).accessLevel(Access.AccessLevelEnum.fromValue(accessLoaderProperties.accessLevel())))
 			.toList();
 
 		final var accessType = new AccessType()
@@ -132,11 +136,11 @@ public class AccessLoaderService {
 	static String toAccessPattern(final String path) {
 		final var segments = path.split(PATH_DELIMITER);
 		if (segments.length <= 1) {
-			return LOCATION_PREFIX + path;
+			return LOCATION_PREFIX + path + WILDCARD_SUFFIX;
 		}
 		// Drop first segment (level-2 root), prefix with LOCATION/
 		final var withoutFirst = String.join(PATH_DELIMITER, java.util.Arrays.copyOfRange(segments, 1, segments.length));
-		return LOCATION_PREFIX + withoutFirst;
+		return LOCATION_PREFIX + withoutFirst + WILDCARD_SUFFIX;
 	}
 
 	private boolean accessesEqual(final AccessUser desired, final AccessUser current) {

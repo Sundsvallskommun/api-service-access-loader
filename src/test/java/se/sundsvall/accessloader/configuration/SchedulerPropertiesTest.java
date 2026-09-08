@@ -12,7 +12,7 @@ class SchedulerPropertiesTest {
 
 	@Test
 	void testRecordProperties() {
-		final var namespaceConfig = new NamespaceConfig(List.of(1, 2), "R");
+		final var namespaceConfig = new NamespaceConfig(List.of(1, 2));
 		final var municipalityConfig = new MunicipalityConfig(Map.of("MY_NAMESPACE", namespaceConfig));
 		final var properties = new SchedulerProperties(Map.of("2281", municipalityConfig));
 
@@ -21,20 +21,18 @@ class SchedulerPropertiesTest {
 
 		final var ns = properties.municipalities().get("2281").namespaces().get("MY_NAMESPACE");
 		assertThat(ns.orgIds()).containsExactly(1, 2);
-		assertThat(ns.accessLevel()).isEqualTo("R");
 	}
 
 	@Test
 	void testNamespaceConfig() {
-		final var config = new NamespaceConfig(List.of(3), "RW");
+		final var config = new NamespaceConfig(List.of(3));
 
 		assertThat(config.orgIds()).containsExactly(3);
-		assertThat(config.accessLevel()).isEqualTo("RW");
 	}
 
 	@Test
 	void testMunicipalityConfig() {
-		final var namespaceConfig = new NamespaceConfig(List.of(1), "LR");
+		final var namespaceConfig = new NamespaceConfig(List.of(1));
 		final var config = new MunicipalityConfig(Map.of("NS", namespaceConfig));
 
 		assertThat(config.namespaces()).hasSize(1);

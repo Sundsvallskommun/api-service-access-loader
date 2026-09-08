@@ -8,6 +8,8 @@ openapi:
   name: ${spring.application.name}
   title: ${spring.application.name}
   version: '@project.version@'
+accessloader:
+  access-level: RW
 scheduler:
   accessloader:
     cron: '0 0 2 * * *'
@@ -17,18 +19,20 @@ scheduler:
     municipalities:
       '2281':
         namespaces:
-          MY_NAMESPACE:
+          HEALTHCAREDEVIATIONVOF:
             org-ids:
-              - 1
-            access-level: R
+              - 9334
+              - 9331
+              - 9326
+              - 4180
+              - 33
 spring:
   application:
     name: api-service-access-loader
   datasource:
-    driver-class-name: org.h2.Driver
-    url: jdbc:h2:mem:accessloader;MODE=MariaDB
+    driver-class-name: org.mariadb.jdbc.Driver
   flyway:
-    enabled: true
+    enabled: false
   security:
     oauth2:
       client:
