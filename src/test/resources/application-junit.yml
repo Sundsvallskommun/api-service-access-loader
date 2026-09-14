@@ -1,0 +1,24 @@
+spring:
+  datasource:
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    url: jdbc:tc:mariadb:10.6:///testdb
+  flyway:
+    enabled: false
+accessloader:
+  access-level: R
+integration:
+  mdviewer:
+    url: http://localhost
+    oauth2-token-grant-url: http://localhost/token
+    oauth2-client-id: test
+    oauth2-client-secret: test
+  employee:
+    url: http://localhost
+    oauth2-token-grant-url: http://localhost/token
+    oauth2-client-id: test
+    oauth2-client-secret: test
+  access-mapper:
+    url: http://localhost
+    oauth2-token-grant-url: http://localhost/token
+    oauth2-client-id: test
+    oauth2-client-secret: test

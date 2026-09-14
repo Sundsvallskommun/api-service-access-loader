@@ -184,6 +184,7 @@ class AccessLoaderServiceTest {
 
 	@Test
 	void resolveManagerHierarchy() {
+		final var parentOrgId = 99;
 		final var rootOrgId = 1;
 		final var middleOrgId = 50;
 		final var leafOrgId = 100;
@@ -191,7 +192,7 @@ class AccessLoaderServiceTest {
 
 		final var leafNode = new OrganizationTree().orgId(leafOrgId).treeLevel(6);
 		final var middleNode = new OrganizationTree().orgId(middleOrgId).treeLevel(4).organizations(List.of(leafNode));
-		final var rootNode = new OrganizationTree().orgId(rootOrgId).treeLevel(2).organizations(List.of(middleNode));
+		final var rootNode = new OrganizationTree().orgId(rootOrgId).treeLevel(2).parentId(parentOrgId).organizations(List.of(middleNode));
 
 		final var managerId = UUID.randomUUID();
 		final var manager = new Manager().personId(managerId).givenname("Boss").lastname("Person");
@@ -423,8 +424,8 @@ class AccessLoaderServiceTest {
 
 	@Test
 	void toAccessPattern() {
-		assertThat(AccessLoaderService.toAccessPattern("1/31/500/8603/10958/7221")).isEqualTo("LOCATION/31/500/8603/10958/7221/**");
-		assertThat(AccessLoaderService.toAccessPattern("8603/10958/7221")).isEqualTo("LOCATION/10958/7221/**");
+		assertThat(AccessLoaderService.toAccessPattern("1/31/500/8603/10958/7221")).isEqualTo("LOCATION/1/31/500/8603/10958/7221/**");
+		assertThat(AccessLoaderService.toAccessPattern("8603/10958/7221")).isEqualTo("LOCATION/8603/10958/7221/**");
 		assertThat(AccessLoaderService.toAccessPattern("100")).isEqualTo("LOCATION/100/**");
 	}
 
@@ -464,11 +465,12 @@ class AccessLoaderServiceTest {
 		final var orgId = 1;
 		final var rootNode = new OrganizationTree().orgId(orgId).treeLevel(2);
 
+		// Pattern is in scope (starts with LOCATION/1/) so it should be deleted
 		final var existingUser = new AccessUser()
 			.id("existing-id")
 			.userId("stale01user")
 			.origin("AUTOMATIC")
-			.accessByType(List.of(new AccessType().type("label").access(List.of(new Access().pattern("LOCATION/50/100").accessLevel(Access.AccessLevelEnum.R)))));
+			.accessByType(List.of(new AccessType().type("label").access(List.of(new Access().pattern("LOCATION/1/50/100/**").accessLevel(Access.AccessLevelEnum.R)))));
 
 		when(mdViewerServiceMock.getOrgTree(orgId)).thenReturn(rootNode);
 		when(accessMapperClientMock.getAccessUsers(MUNICIPALITY_ID, NAMESPACE, "AUTOMATIC")).thenReturn(List.of(existingUser));
@@ -478,6 +480,52 @@ class AccessLoaderServiceTest {
 		verify(accessMapperClientMock).deleteAccessUser(MUNICIPALITY_ID, NAMESPACE, "existing-id");
 		verify(accessMapperClientMock, never()).createAccessUser(any(), any(), any());
 		verify(accessMapperClientMock, never()).updateAccessUser(any(), any(), any(), any());
+	}
+
+	@Test
+	void syncAccessUsersDoesNotDeleteOutOfScopeUser() {
+		final var orgId = 1;
+		final var rootNode = new OrganizationTree().orgId(orgId).treeLevel(2);
+
+		// Pattern is out of scope (starts with LOCATION/50/, not LOCATION/1/) so it should be left alone
+		final var existingUser = new AccessUser()
+			.id("existing-id")
+			.userId("other01user")
+			.origin("AUTOMATIC")
+			.accessByType(List.of(new AccessType().type("label").access(List.of(new Access().pattern("LOCATION/50/100/**").accessLevel(Access.AccessLevelEnum.R)))));
+
+		when(mdViewerServiceMock.getOrgTree(orgId)).thenReturn(rootNode);
+		when(accessMapperClientMock.getAccessUsers(MUNICIPALITY_ID, NAMESPACE, "AUTOMATIC")).thenReturn(List.of(existingUser));
+
+		accessLoaderService.syncAccessUsers(MUNICIPALITY_ID, NAMESPACE, List.of(orgId));
+
+		verify(accessMapperClientMock, never()).deleteAccessUser(any(), any(), any());
+		verify(accessMapperClientMock, never()).createAccessUser(any(), any(), any());
+		verify(accessMapperClientMock, never()).updateAccessUser(any(), any(), any(), any());
+	}
+
+	@Test
+	void syncAccessUsersRemovesOnlyInScopeAccessesFromUser() {
+		final var orgId = 1;
+		final var rootNode = new OrganizationTree().orgId(orgId).treeLevel(2);
+
+		// User has both in-scope and out-of-scope accesses, only in-scope should be removed
+		final var existingUser = new AccessUser()
+			.id("existing-id")
+			.userId("mixed01user")
+			.origin("AUTOMATIC")
+			.accessByType(List.of(new AccessType().type("label").access(List.of(
+				new Access().pattern("LOCATION/1/50/100/**").accessLevel(Access.AccessLevelEnum.R),
+				new Access().pattern("LOCATION/99/200/**").accessLevel(Access.AccessLevelEnum.R)))));
+
+		when(mdViewerServiceMock.getOrgTree(orgId)).thenReturn(rootNode);
+		when(accessMapperClientMock.getAccessUsers(MUNICIPALITY_ID, NAMESPACE, "AUTOMATIC")).thenReturn(List.of(existingUser));
+
+		accessLoaderService.syncAccessUsers(MUNICIPALITY_ID, NAMESPACE, List.of(orgId));
+
+		verify(accessMapperClientMock).updateAccessUser(eq(MUNICIPALITY_ID), eq(NAMESPACE), eq("existing-id"), any(AccessUser.class));
+		verify(accessMapperClientMock, never()).deleteAccessUser(any(), any(), any());
+		verify(accessMapperClientMock, never()).createAccessUser(any(), any(), any());
 	}
 
 	@Test
@@ -496,12 +544,12 @@ class AccessLoaderServiceTest {
 		final var managerEmployment = new Employment().isMainEmployment(true);
 		final var managerAsEmployee = new Employeev2().personId(managerId).employments(List.of(managerEmployment));
 
-		// Existing user has a different pattern
+		// Existing user has a different in-scope pattern
 		final var existingUser = new AccessUser()
 			.id("existing-id")
 			.userId("boss01per")
 			.origin("AUTOMATIC")
-			.accessByType(List.of(new AccessType().type("label").access(List.of(new Access().pattern("LOCATION/old/path").accessLevel(Access.AccessLevelEnum.R)))));
+			.accessByType(List.of(new AccessType().type("label").access(List.of(new Access().pattern("LOCATION/1/999/**").accessLevel(Access.AccessLevelEnum.R)))));
 
 		when(mdViewerServiceMock.getOrgTree(orgId)).thenReturn(rootNode);
 		when(mdViewerServiceMock.getPersonIds(leafOrgId)).thenReturn(List.of("person-1"));
@@ -534,12 +582,12 @@ class AccessLoaderServiceTest {
 		final var managerEmployment = new Employment().isMainEmployment(true);
 		final var managerAsEmployee = new Employeev2().personId(managerId).employments(List.of(managerEmployment));
 
-		// Existing user matches desired state: path "1/100" -> drop first -> "100" -> "LOCATION/100/**"
+		// Existing user matches desired state: path "1/100" -> "LOCATION/1/100/**"
 		final var existingUser = new AccessUser()
 			.id("existing-id")
 			.userId("boss01per")
 			.origin("AUTOMATIC")
-			.accessByType(List.of(new AccessType().type("label").access(List.of(new Access().pattern("LOCATION/100/**").accessLevel(Access.AccessLevelEnum.R)))));
+			.accessByType(List.of(new AccessType().type("label").access(List.of(new Access().pattern("LOCATION/1/100/**").accessLevel(Access.AccessLevelEnum.R)))));
 
 		when(mdViewerServiceMock.getOrgTree(orgId)).thenReturn(rootNode);
 		when(mdViewerServiceMock.getPersonIds(leafOrgId)).thenReturn(List.of("person-1"));

@@ -2,9 +2,10 @@
 #========================================
 # Test profile settings (junit tests)
 #========================================
-logging:
-  level:
-    root: DEBUG
+spring:
+  datasource:
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    url: jdbc:tc:mariadb:10.6:///junittest
 accessloader:
   access-level: R
 scheduler:

@@ -25,7 +25,6 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 class AccessLoaderResourceTest {
 
 	private static final String MUNICIPALITY_ID = "2281";
-	private static final String PATH = "/{municipalityId}/access-loader";
 	private static final String SYNC_PATH = "/{municipalityId}/access-loader/sync";
 
 	@MockitoBean
@@ -42,21 +41,6 @@ class AccessLoaderResourceTest {
 
 	@Autowired
 	private WebTestClient webTestClient;
-
-	@Test
-	void loadManagers() {
-		webTestClient.post()
-			.uri(builder -> builder.path(PATH)
-				.queryParam("orgIds", 1, 2, 3)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID)))
-			.exchange()
-			.expectStatus().isOk();
-
-		verify(accessLoaderService).resolveManagerHierarchy(MUNICIPALITY_ID, 1);
-		verify(accessLoaderService).resolveManagerHierarchy(MUNICIPALITY_ID, 2);
-		verify(accessLoaderService).resolveManagerHierarchy(MUNICIPALITY_ID, 3);
-		verifyNoMoreInteractions(accessLoaderService);
-	}
 
 	@Test
 	void syncAccessUsers() {

@@ -29,7 +29,7 @@ class AccessLoaderResourceFailureTest {
 
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String INVALID_MUNICIPALITY_ID = "not-valid";
-	private static final String PATH = "/{municipalityId}/access-loader";
+	private static final String SYNC_PATH = "/{municipalityId}/access-loader/sync";
 
 	@MockitoBean
 	private AccessLoaderService accessLoaderService;
@@ -47,9 +47,10 @@ class AccessLoaderResourceFailureTest {
 	private WebTestClient webTestClient;
 
 	@Test
-	void loadManagersWithInvalidMunicipalityId() {
+	void syncAccessUsersWithInvalidMunicipalityId() {
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH)
+			.uri(builder -> builder.path(SYNC_PATH)
+				.queryParam("namespace", "MY_NAMESPACE")
 				.queryParam("orgIds", 1)
 				.build(Map.of("municipalityId", INVALID_MUNICIPALITY_ID)))
 			.exchange()
@@ -63,15 +64,16 @@ class AccessLoaderResourceFailureTest {
 		assertThat(response.getStatus()).isEqualTo(BAD_REQUEST);
 		assertThat(response.getViolations())
 			.extracting(Violation::field, Violation::message)
-			.containsExactlyInAnyOrder(tuple("loadManagers.municipalityId", "not a valid municipality ID"));
+			.containsExactlyInAnyOrder(tuple("syncAccessUsers.municipalityId", "not a valid municipality ID"));
 
 		verifyNoInteractions(accessLoaderService);
 	}
 
 	@Test
-	void loadManagersWithMissingOrgIds() {
+	void syncAccessUsersWithMissingOrgIds() {
 		final var response = webTestClient.post()
-			.uri(builder -> builder.path(PATH)
+			.uri(builder -> builder.path(SYNC_PATH)
+				.queryParam("namespace", "MY_NAMESPACE")
 				.build(Map.of("municipalityId", MUNICIPALITY_ID)))
 			.exchange()
 			.expectStatus().isBadRequest()

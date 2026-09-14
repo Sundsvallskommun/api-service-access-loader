@@ -26,6 +26,13 @@ scheduler:
               - 9326
               - 4180
               - 33
+          HEALTHCAREDEVIATIONIAF:
+            org-ids:
+              - 500
+              - 7439
+              - 5457
+              - 7403
+              - 512
 spring:
   application:
     name: api-service-access-loader

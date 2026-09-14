@@ -11,6 +11,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Optional;
+import java.util.Set;
 import java.util.UUID;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -48,7 +49,20 @@ public class AccessLoaderService {
 	}
 
 	public void syncAccessUsers(final String municipalityId, final String namespace, final List<Integer> orgIds) {
-		// 1. Resolve managers across all orgIds and merge
+		final var scopePrefixes = orgIds.stream()
+			.map(orgId -> LOCATION_PREFIX + orgId + PATH_DELIMITER)
+			.collect(Collectors.toSet());
+
+		final var desiredByUserId = buildDesiredState(municipalityId, orgIds);
+
+		final var currentAutomaticByUserId = accessMapperClient.getAccessUsers(municipalityId, namespace, ORIGIN_AUTOMATIC).stream()
+			.collect(Collectors.toMap(AccessUser::getUserId, Function.identity()));
+
+		createNewUsers(municipalityId, namespace, desiredByUserId, currentAutomaticByUserId);
+		syncExistingUsers(municipalityId, namespace, desiredByUserId, currentAutomaticByUserId, scopePrefixes);
+	}
+
+	private Map<String, AccessUser> buildDesiredState(final String municipalityId, final List<Integer> orgIds) {
 		final var allManagers = new LinkedHashMap<UUID, ManagerWithInheritedPaths>();
 		for (final var orgId : orgIds) {
 			final var managers = resolveManagerHierarchy(municipalityId, orgId);
@@ -60,61 +74,88 @@ public class AccessLoaderService {
 			}));
 		}
 
-		// 2. Build desired state
-		final var desiredByUserId = allManagers.values().stream()
+		return allManagers.values().stream()
 			.filter(entry -> entry.manager().getLoginname() != null)
 			.collect(Collectors.toMap(
 				entry -> entry.manager().getLoginname(),
-										this::buildAccessUser,
-				(a, b) -> {
-					Optional.ofNullable(b.getAccessByType())
-						.stream()
-						.flatMap(List::stream)
-						.findFirst()
-						.ifPresent(incomingType -> {
-							final var existingType = Optional.ofNullable(a.getAccessByType())
-								.stream()
-								.flatMap(List::stream)
-								.findFirst()
-								.orElse(null);
-							if (existingType != null && incomingType.getAccess() != null) {
-								incomingType.getAccess().stream()
-									.filter(access -> !existingType.getAccess().contains(access))
-									.forEach(existingType.getAccess()::add);
-							}
-						});
-					return a;
-				}));
+				this::buildAccessUser,
+				this::mergeAccessUsers));
+	}
 
-		// 3. Fetch current AUTOMATIC users
-		final var currentAutomaticByUserId = accessMapperClient.getAccessUsers(municipalityId, namespace, ORIGIN_AUTOMATIC).stream()
-			.collect(Collectors.toMap(AccessUser::getUserId, Function.identity()));
+	private AccessUser mergeAccessUsers(final AccessUser existing, final AccessUser incoming) {
+		Optional.ofNullable(incoming.getAccessByType())
+			.stream()
+			.flatMap(List::stream)
+			.findFirst()
+			.ifPresent(incomingType -> {
+				final var existingType = Optional.ofNullable(existing.getAccessByType())
+					.stream()
+					.flatMap(List::stream)
+					.findFirst()
+					.orElse(null);
+				if (existingType != null && incomingType.getAccess() != null) {
+					incomingType.getAccess().stream()
+						.filter(access -> !existingType.getAccess().contains(access))
+						.forEach(existingType.getAccess()::add);
+				}
+			});
+		return existing;
+	}
 
-		// 4. Diff and sync
-		// Create: in desired but not in current
+	private void createNewUsers(final String municipalityId, final String namespace,
+		final Map<String, AccessUser> desiredByUserId, final Map<String, AccessUser> currentByUserId) {
+
 		desiredByUserId.forEach((userId, desired) -> {
-			if (!currentAutomaticByUserId.containsKey(userId)) {
+			if (!currentByUserId.containsKey(userId)) {
 				LOG.info("Creating access user: {}", userId);
 				accessMapperClient.createAccessUser(municipalityId, namespace, desired);
 			}
 		});
+	}
 
-		// Delete: in current (AUTOMATIC) but not in desired
-		currentAutomaticByUserId.forEach((userId, current) -> {
-			if (!desiredByUserId.containsKey(userId)) {
-				LOG.info("Deleting access user: {} (id: {})", userId, current.getId());
-				accessMapperClient.deleteAccessUser(municipalityId, namespace, current.getId());
+	private void syncExistingUsers(final String municipalityId, final String namespace,
+		final Map<String, AccessUser> desiredByUserId, final Map<String, AccessUser> currentByUserId, final Set<String> scopePrefixes) {
+
+		currentByUserId.forEach((userId, current) -> {
+			final var desired = desiredByUserId.get(userId);
+			final var currentAccesses = extractAccessList(current);
+			final var outOfScopeAccesses = currentAccesses.stream()
+				.filter(access -> !isInScope(access.getPattern(), scopePrefixes))
+				.toList();
+
+			if (desired == null) {
+				removeStaleAccesses(municipalityId, namespace, userId, current, currentAccesses, outOfScopeAccesses);
+			} else {
+				mergeAndUpdateAccesses(municipalityId, namespace, userId, current, currentAccesses, outOfScopeAccesses, desired);
 			}
 		});
+	}
 
-		// Update: in both but accesses differ
-		desiredByUserId.forEach((userId, desired) -> {
-			final var current = currentAutomaticByUserId.get(userId);
-			if (current != null && !accessesEqual(desired, current)) {
-				LOG.info("Updating access user: {} (id: {})", userId, current.getId());
-				accessMapperClient.updateAccessUser(municipalityId, namespace, current.getId(), desired);
-			}
-		});
+	private void removeStaleAccesses(final String municipalityId, final String namespace, final String userId,
+		final AccessUser current, final List<Access> currentAccesses, final List<Access> outOfScopeAccesses) {
+
+		if (outOfScopeAccesses.isEmpty()) {
+			LOG.info("Deleting access user: {} (id: {})", userId, current.getId());
+			accessMapperClient.deleteAccessUser(municipalityId, namespace, current.getId());
+		} else if (outOfScopeAccesses.size() < currentAccesses.size()) {
+			LOG.info("Removing in-scope accesses for user: {} (id: {})", userId, current.getId());
+			accessMapperClient.updateAccessUser(municipalityId, namespace, current.getId(), rebuildAccessUser(current, outOfScopeAccesses));
+		}
+	}
+
+	private void mergeAndUpdateAccesses(final String municipalityId, final String namespace, final String userId,
+		final AccessUser current, final List<Access> currentAccesses, final List<Access> outOfScopeAccesses, final AccessUser desired) {
+
+		final var desiredAccesses = extractAccessList(desired);
+		final var mergedAccesses = new ArrayList<>(outOfScopeAccesses);
+		desiredAccesses.stream()
+			.filter(access -> mergedAccesses.stream().noneMatch(existing -> Objects.equals(existing.getPattern(), access.getPattern())))
+			.forEach(mergedAccesses::add);
+
+		if (!accessListEquals(currentAccesses, mergedAccesses)) {
+			LOG.info("Updating access user: {} (id: {})", userId, current.getId());
+			accessMapperClient.updateAccessUser(municipalityId, namespace, current.getId(), rebuildAccessUser(current, mergedAccesses));
+		}
 	}
 
 	private AccessUser buildAccessUser(final ManagerWithInheritedPaths entry) {
@@ -134,31 +175,40 @@ public class AccessLoaderService {
 	}
 
 	static String toAccessPattern(final String path) {
-		final var segments = path.split(PATH_DELIMITER);
-		if (segments.length <= 1) {
-			return LOCATION_PREFIX + path + WILDCARD_SUFFIX;
-		}
-		// Drop first segment (level-2 root), prefix with LOCATION/
-		final var withoutFirst = String.join(PATH_DELIMITER, java.util.Arrays.copyOfRange(segments, 1, segments.length));
-		return LOCATION_PREFIX + withoutFirst + WILDCARD_SUFFIX;
+		return LOCATION_PREFIX + path + WILDCARD_SUFFIX;
 	}
 
-	private boolean accessesEqual(final AccessUser desired, final AccessUser current) {
-		final var desiredAccesses = extractAccesses(desired);
-		final var currentAccesses = extractAccesses(current);
-		return desiredAccesses.equals(currentAccesses);
+	private static boolean isInScope(final String pattern, final Set<String> scopePrefixes) {
+		return pattern != null && scopePrefixes.stream().anyMatch(pattern::startsWith);
 	}
 
-	private Map<String, String> extractAccesses(final AccessUser user) {
+	private List<Access> extractAccessList(final AccessUser user) {
 		return Optional.ofNullable(user.getAccessByType())
 			.orElse(List.of())
 			.stream()
 			.filter(at -> ACCESS_TYPE_LABEL.equals(at.getType()))
 			.flatMap(at -> Optional.ofNullable(at.getAccess()).orElse(List.of()).stream())
+			.toList();
+	}
+
+	private boolean accessListEquals(final List<Access> a, final List<Access> b) {
+		final var toMap = (Function<List<Access>, Map<String, String>>) list -> list.stream()
 			.collect(Collectors.toMap(
 				Access::getPattern,
 				access -> Optional.ofNullable(access.getAccessLevel()).map(Enum::name).orElse(""),
-				(a, b) -> a));
+				(x, y) -> x));
+		return toMap.apply(a).equals(toMap.apply(b));
+	}
+
+	private AccessUser rebuildAccessUser(final AccessUser original, final List<Access> accesses) {
+		final var accessType = new AccessType()
+			.type(ACCESS_TYPE_LABEL)
+			.access(new ArrayList<>(accesses));
+
+		return new AccessUser()
+			.userId(original.getUserId())
+			.origin(original.getOrigin())
+			.accessByType(List.of(accessType));
 	}
 
 	public Map<Integer, List<String>> loadPersonIdsByOrg(final int orgId) {
