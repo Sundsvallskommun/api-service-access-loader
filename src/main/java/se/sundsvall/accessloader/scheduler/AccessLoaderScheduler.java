@@ -9,7 +9,7 @@ import se.sundsvall.dept44.requestid.RequestId;
 import se.sundsvall.dept44.scheduling.Dept44Scheduled;
 
 @Component
-class AccessLoaderScheduler {
+public class AccessLoaderScheduler {
 
 	private static final Logger LOG = LoggerFactory.getLogger(AccessLoaderScheduler.class);
 
@@ -26,7 +26,7 @@ class AccessLoaderScheduler {
 		name = "${scheduler.accessloader.name}",
 		lockAtMostFor = "${scheduler.accessloader.lock-at-most-for}",
 		maximumExecutionTime = "${scheduler.accessloader.maximum-execution-time}")
-	void execute() {
+	public void execute() {
 		LOG.info("Starting access loader job");
 
 		schedulerProperties.municipalities().forEach((municipalityId, municipalityConfig) -> {

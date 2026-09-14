@@ -1,7 +1,5 @@
 package se.sundsvall.accessloader.api;
 
-import java.util.List;
-import java.util.Map;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -13,7 +11,7 @@ import se.sundsvall.accessloader.Application;
 import se.sundsvall.accessloader.integration.accessmapper.AccessMapperClient;
 import se.sundsvall.accessloader.integration.employee.EmployeeClient;
 import se.sundsvall.accessloader.integration.mdviewer.MdViewerClient;
-import se.sundsvall.accessloader.service.AccessLoaderService;
+import se.sundsvall.accessloader.scheduler.AccessLoaderScheduler;
 
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -24,11 +22,10 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @ActiveProfiles("junit")
 class AccessLoaderResourceTest {
 
-	private static final String MUNICIPALITY_ID = "2281";
-	private static final String SYNC_PATH = "/{municipalityId}/access-loader/sync";
+	private static final String SYNC_PATH = "/sync";
 
 	@MockitoBean
-	private AccessLoaderService accessLoaderService;
+	private AccessLoaderScheduler accessLoaderScheduler;
 
 	@MockitoBean
 	private AccessMapperClient accessMapperClient;
@@ -43,16 +40,13 @@ class AccessLoaderResourceTest {
 	private WebTestClient webTestClient;
 
 	@Test
-	void syncAccessUsers() {
+	void sync() {
 		webTestClient.post()
-			.uri(builder -> builder.path(SYNC_PATH)
-				.queryParam("namespace", "MY_NAMESPACE")
-				.queryParam("orgIds", 1, 2)
-				.build(Map.of("municipalityId", MUNICIPALITY_ID)))
+			.uri(SYNC_PATH)
 			.exchange()
-			.expectStatus().isOk();
+			.expectStatus().isNoContent();
 
-		verify(accessLoaderService).syncAccessUsers(MUNICIPALITY_ID, "MY_NAMESPACE", List.of(1, 2));
-		verifyNoMoreInteractions(accessLoaderService);
+		verify(accessLoaderScheduler).execute();
+		verifyNoMoreInteractions(accessLoaderScheduler);
 	}
 }
