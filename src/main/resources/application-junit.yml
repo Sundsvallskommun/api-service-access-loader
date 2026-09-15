@@ -1,6 +1,41 @@
+
 #========================================
 # Test profile settings (junit tests)
 #========================================
-logging:
-  level:
-    root: DEBUG
+spring:
+  datasource:
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    url: jdbc:tc:mariadb:10.6:///junittest
+accessloader:
+  access-level: R
+scheduler:
+  accessloader:
+    cron: '-'
+    municipalities:
+      '2281':
+        namespaces:
+          MY_NAMESPACE:
+            org-ids:
+              - 1
+integration:
+  mdviewer:
+    url: http://localhost:8080
+    oauth2-token-grant-url: http://localhost:8080/token
+    oauth2-client-id: mdviewer-client-id
+    oauth2-client-secret: mdviewer-client-secret
+    connect-timeout: 5
+    read-timeout: 30
+  employee:
+    url: http://localhost:8080
+    oauth2-token-grant-url: http://localhost:8080/token
+    oauth2-client-id: employee-client-id
+    oauth2-client-secret: employee-client-secret
+    connect-timeout: 5
+    read-timeout: 30
+  access-mapper:
+    url: http://localhost:8080
+    oauth2-token-grant-url: http://localhost:8080/token
+    oauth2-client-id: access-mapper-client-id
+    oauth2-client-secret: access-mapper-client-secret
+    connect-timeout: 5
+    read-timeout: 30
