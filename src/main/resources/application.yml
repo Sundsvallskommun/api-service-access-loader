@@ -33,6 +33,26 @@ scheduler:
               - 5457
               - 7403
               - 512
+  subscriberloader:
+    cron: '0 30 2 * * *'
+    name: subscriber-loader
+    lock-at-most-for: PT15M
+    maximum-execution-time: PT15M
+    municipalities:
+      '2281':
+        namespaces:
+          HEALTHCAREDEVIATIONVOF:
+            role-profiles:
+              LEX_RESPONSIBLE: LEX_RESPONSIBLE
+              UNIT_MANAGER: UNIT_MANAGER
+              HEAD_OF_OPERATIONS: HEAD_OF_OPERATIONS
+              MAR_MAS: MAR_MAS
+          HEALTHCAREDEVIATIONIAF:
+            role-profiles:
+              LEX_RESPONSIBLE: LEX_RESPONSIBLE
+              UNIT_MANAGER: UNIT_MANAGER
+              HEAD_OF_OPERATIONS: HEAD_OF_OPERATIONS
+              MAR_MAS: MAR_MAS
 spring:
   application:
     name: api-service-access-loader
@@ -50,6 +70,8 @@ spring:
             token-uri: ${integration.employee.oauth2-token-grant-url}
           access-mapper:
             token-uri: ${integration.access-mapper.oauth2-token-grant-url}
+          support-management:
+            token-uri: ${integration.support-management.oauth2-token-grant-url}
         registration:
           mdviewer:
             authorization-grant-type: client_credentials
@@ -66,6 +88,11 @@ spring:
             provider: access-mapper
             client-id: ${integration.access-mapper.oauth2-client-id}
             client-secret: ${integration.access-mapper.oauth2-client-secret}
+          support-management:
+            authorization-grant-type: client_credentials
+            provider: support-management
+            client-id: ${integration.support-management.oauth2-client-id}
+            client-secret: ${integration.support-management.oauth2-client-secret}
 integration:
   mdviewer:
     connect-timeout: 5
@@ -74,5 +101,8 @@ integration:
     connect-timeout: 5
     read-timeout: 30
   access-mapper:
+    connect-timeout: 5
+    read-timeout: 30
+  support-management:
     connect-timeout: 5
     read-timeout: 30

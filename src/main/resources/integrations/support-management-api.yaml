@@ -1,0 +1,260 @@
+openapi: 3.1.0
+info:
+  title: support-management
+  contact: {}
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+  version: "17.1"
+servers:
+  - url: http://localhost:55088
+    description: Generated server url
+tags:
+  - name: Subscription profiles
+    description: Subscription profile operations
+paths:
+  /{municipalityId}/{namespace}/subscription-profiles:
+    get:
+      tags:
+        - Subscription profiles
+      summary: List subscription profiles
+      description: List the subscription profiles of the namespace.
+      operationId: getSubscriptionProfiles
+      parameters:
+        - name: namespace
+          in: path
+          description: Namespace
+          required: true
+          schema:
+            type: string
+            pattern: "[\\w|\\-]+"
+          example: MY_NAMESPACE
+        - name: municipalityId
+          in: path
+          description: Municipality ID
+          required: true
+          schema:
+            type: string
+          example: 2281
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/SubscriptionProfile"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+  /{municipalityId}/{namespace}/subscription-profiles/{profileId}/members:
+    put:
+      tags:
+        - Subscription profiles
+      summary: Replace subscription profile members
+      description: "Makes the given principals the members of the profile. Principals\
+        \ not yet members are subscribed to the profile for the whole namespace, creating\
+        \ a subscriber for them when they have none, and members missing from the list\
+        \ lose their subscription to the profile. A principal who has left the profile\
+        \ themselves is not subscribed again."
+      operationId: replaceSubscriptionProfileMembers
+      parameters:
+        - name: namespace
+          in: path
+          description: Namespace
+          required: true
+          schema:
+            type: string
+            pattern: "[\\w|\\-]+"
+          example: MY_NAMESPACE
+        - name: municipalityId
+          in: path
+          description: Municipality ID
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: profileId
+          in: path
+          description: Subscription profile ID
+          required: true
+          schema:
+            type: string
+          example: 123e4567-e89b-12d3-a456-426614174000
+      requestBody:
+        content:
+          application/json:
+            schema:
+              type: array
+              items:
+                $ref: "#/components/schemas/Identifier"
+        required: true
+      responses:
+        "204":
+          description: Successful operation
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+components:
+  schemas:
+    SubscriptionProfile:
+      type: object
+      description: "A subscription profile is a named set of event filters and the\
+        \ channels the events they match are delivered on."
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the subscription profile
+          examples:
+            - 123e4567-e89b-12d3-a456-426614174000
+          readOnly: true
+        name:
+          type: string
+          description: "Name of the profile, unique within the namespace"
+          examples:
+            - Mejl om nya ärenden och meddelanden
+          maxLength: 255
+          minLength: 0
+        description:
+          type: string
+          description: Optional description of what the profile is for
+          examples:
+            - Används av enhetschefer och verksamhetschefer
+          maxLength: 255
+          minLength: 0
+        eventFilters:
+          type: array
+          description: Event filters selecting which events the profile delivers.
+          items:
+            $ref: "#/components/schemas/EventFilter"
+        channels:
+          type: array
+          description: Channels the events matched by the profile are delivered on.
+          items:
+            type: string
+            description: Channel through which a notification is delivered
+            enum:
+              - INTERNAL
+              - EMAIL
+              - SMS
+        created:
+          type: string
+          format: date-time
+          description: Timestamp when the profile was created
+          readOnly: true
+        modified:
+          type: string
+          format: date-time
+          description: Timestamp when the profile was last modified
+          readOnly: true
+    EventFilter:
+      type: object
+      description: "Filter on event type/subtype, used to limit which eventlog events\
+        \ trigger a notification"
+      properties:
+        type:
+          type: string
+          description: Event type. Matches the eventlog EventType enum.
+          examples:
+            - UPDATE
+        subtype:
+          type: string
+          description: "Event subtype. If null, all subtypes of the given type match."
+          examples:
+            - ATTACHMENT
+        labelId:
+          type: string
+          description: Optional id of a metadata label.
+          examples:
+            - f2b7c5d1-7e3a-4b8e-9f0a-1c2d3e4f5a6b
+    Identifier:
+      type: object
+      description: Identifier describing a user or subject (AD-account or party-id)
+      properties:
+        type:
+          type: string
+          description: Identifier type
+          examples:
+            - adAccount
+            - partyId
+        value:
+          type: string
+          description: Identifier value (AD-account name or partyId UUID)
+          examples:
+            - joe01doe
+      required:
+        - type
+        - value
+    Problem:
+      type: object
+      properties:
+        instance:
+          type: string
+          format: uri
+        type:
+          type: string
+          format: uri
+        detail:
+          type: string
+        title:
+          type: string
+        status:
+          type: integer
+          format: int32
+    ConstraintViolationProblem:
+      type: object
+      properties:
+        type:
+          type: string
+          format: uri
+        status:
+          type: integer
+          format: int32
+        violations:
+          type: array
+          items:
+            $ref: "#/components/schemas/Violation"
+        title:
+          type: string
+        instance:
+          type: string
+          format: uri
+        detail:
+          type: string
+    Violation:
+      type: object
+      properties:
+        field:
+          type: string
+        message:
+          type: string
+  securitySchemes: {}
