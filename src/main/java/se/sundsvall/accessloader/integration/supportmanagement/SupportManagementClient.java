@@ -26,6 +26,12 @@ public interface SupportManagementClient {
 		@PathVariable("municipalityId") final String municipalityId,
 		@PathVariable("namespace") final String namespace);
 
+	@GetMapping(path = "/{municipalityId}/{namespace}/subscription-profiles/{profileId}/members", produces = APPLICATION_JSON_VALUE)
+	List<Identifier> getSubscriptionProfileMembers(
+		@PathVariable("municipalityId") final String municipalityId,
+		@PathVariable("namespace") final String namespace,
+		@PathVariable("profileId") final String profileId);
+
 	@PutMapping(path = "/{municipalityId}/{namespace}/subscription-profiles/{profileId}/members", consumes = APPLICATION_JSON_VALUE)
 	void replaceSubscriptionProfileMembers(
 		@PathVariable("municipalityId") final String municipalityId,

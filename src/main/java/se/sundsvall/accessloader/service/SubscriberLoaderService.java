@@ -28,6 +28,8 @@ public class SubscriberLoaderService {
 
 	private static final String ACCESS_TYPE_ROLE = "role";
 	private static final String IDENTIFIER_TYPE_AD_ACCOUNT = "adAccount";
+	private static final String ORIGIN_AUTOMATIC = "AUTOMATIC";
+	private static final String ORIGIN_MANUAL = "MANUAL";
 
 	private final AccessMapperClient accessMapperClient;
 	private final SupportManagementClient supportManagementClient;
@@ -38,9 +40,13 @@ public class SubscriberLoaderService {
 	}
 
 	/**
-	 * Makes the users holding a configured role the members of the subscription profile the role is mapped to. Users who
-	 * no longer hold the role lose their membership. Any failure aborts the sync before members are replaced, so that
-	 * users are never removed from a profile because their roles could not be read.
+	 * Makes the managers holding a configured role the members of the subscription profile the role is mapped to.
+	 * Managers are the users the access loader job creates in access-mapper (origin AUTOMATIC). Managers who no longer
+	 * hold the role, or are no managers any more, lose their membership. Any failure aborts the sync of a profile before
+	 * its members are replaced, so that users are never removed from a profile because their roles could not be read.
+	 * <p>
+	 * Members that are manually created users in access-mapper (origin MANUAL) are kept, as they are managed by hand. Any
+	 * other member is replaced.
 	 * <p>
 	 * The roleProfiles act as an allowlist: a role that is not configured is ignored even if a profile is named as it, and
 	 * a profile that no configured role is mapped to is never touched.
@@ -62,17 +68,37 @@ public class SubscriberLoaderService {
 		}
 
 		final var membersByProfileName = new LinkedHashMap<String, Set<String>>();
-		profileNameByRole.values().forEach(profileName -> membersByProfileName.putIfAbsent(profileName, new TreeSet<>()));
+		profileNameByRole.values().forEach(profileName -> membersByProfileName.putIfAbsent(profileName, newUserIdSet()));
 
-		getUserIds(municipalityId, namespace).forEach(userId -> getRoles(municipalityId, namespace, userId).stream()
+		getUserIds(municipalityId, namespace, ORIGIN_AUTOMATIC).forEach(userId -> getRoles(municipalityId, namespace, userId).stream()
 			.map(profileNameByRole::get)
 			.filter(Objects::nonNull)
 			.forEach(profileName -> membersByProfileName.get(profileName).add(userId)));
 
+		final var manualUserIds = getUserIds(municipalityId, namespace, ORIGIN_MANUAL);
+
 		membersByProfileName.forEach((profileName, userIds) -> {
-			LOG.info("Replacing members of subscription profile '{}' with {} user(s)", profileName, userIds.size());
-			supportManagementClient.replaceSubscriptionProfileMembers(municipalityId, namespace, profileIdsByName.get(profileName), toIdentifiers(userIds));
+			final var profileId = profileIdsByName.get(profileName);
+			final var manualMembers = getManualMembers(municipalityId, namespace, profileId, manualUserIds);
+			userIds.addAll(manualMembers);
+
+			LOG.info("Replacing members of subscription profile '{}' with {} user(s), keeping {} manually created user(s)", profileName, userIds.size(), manualMembers.size());
+			supportManagementClient.replaceSubscriptionProfileMembers(municipalityId, namespace, profileId, toIdentifiers(userIds));
 		});
+	}
+
+	/**
+	 * The current members of the profile that are manually created users in access-mapper.
+	 */
+	private List<String> getManualMembers(final String municipalityId, final String namespace, final String profileId, final Set<String> manualUserIds) {
+		return Optional.ofNullable(supportManagementClient.getSubscriptionProfileMembers(municipalityId, namespace, profileId))
+			.orElse(List.of())
+			.stream()
+			.filter(member -> IDENTIFIER_TYPE_AD_ACCOUNT.equals(member.getType()))
+			.map(Identifier::getValue)
+			.filter(Objects::nonNull)
+			.filter(manualUserIds::contains)
+			.toList();
 	}
 
 	private Map<String, String> getProfileIdsByName(final String municipalityId, final String namespace) {
@@ -99,11 +125,18 @@ public class SubscriberLoaderService {
 		return result;
 	}
 
-	private Set<String> getUserIds(final String municipalityId, final String namespace) {
-		return accessMapperClient.getAccessUsers(municipalityId, namespace, null).stream()
+	private Set<String> getUserIds(final String municipalityId, final String namespace, final String origin) {
+		return accessMapperClient.getAccessUsers(municipalityId, namespace, origin).stream()
 			.map(AccessUser::getUserId)
 			.filter(Objects::nonNull)
-			.collect(Collectors.toCollection(TreeSet::new));
+			.collect(Collectors.toCollection(SubscriberLoaderService::newUserIdSet));
+	}
+
+	/**
+	 * A sorted set of user ids, compared without regard to case as AD accounts are.
+	 */
+	private static Set<String> newUserIdSet() {
+		return new TreeSet<>(String.CASE_INSENSITIVE_ORDER);
 	}
 
 	/**

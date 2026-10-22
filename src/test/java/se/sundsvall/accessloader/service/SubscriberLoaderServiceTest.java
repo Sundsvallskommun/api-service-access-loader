@@ -34,6 +34,8 @@ class SubscriberLoaderServiceTest {
 	private static final String MUNICIPALITY_ID = "2281";
 	private static final String NAMESPACE = "MY_NAMESPACE";
 	private static final String ROLE = "role";
+	private static final String AUTOMATIC = "AUTOMATIC";
+	private static final String MANUAL = "MANUAL";
 
 	@Mock
 	private AccessMapperClient accessMapperClientMock;
@@ -59,12 +61,16 @@ class SubscriberLoaderServiceTest {
 			new SubscriptionProfile().id("profile-4").name("REPORTER"),
 			new SubscriptionProfile().name("Utan id")));
 
-		when(accessMapperClientMock.getAccessUsers(MUNICIPALITY_ID, NAMESPACE, null)).thenReturn(List.of(
+		when(accessMapperClientMock.getAccessUsers(MUNICIPALITY_ID, NAMESPACE, AUTOMATIC)).thenReturn(List.of(
 			new AccessUser().userId("user1"),
 			new AccessUser().userId("user1"),
 			new AccessUser().userId("user2"),
 			new AccessUser().userId("user3"),
 			new AccessUser()));
+		when(accessMapperClientMock.getAccessUsers(MUNICIPALITY_ID, NAMESPACE, MANUAL)).thenReturn(List.of(
+			new AccessUser().userId("manual1"),
+			new AccessUser().userId("MANUAL2"),
+			new AccessUser().userId("USER1")));
 
 		when(accessMapperClientMock.getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "user1", ROLE)).thenReturn(List.of(
 			accessGroup(ROLE, "UNIT_MANAGER"),
@@ -77,30 +83,49 @@ class SubscriberLoaderServiceTest {
 			new AccessGroup().accessByType(List.of(new AccessType().type(ROLE).access(List.of(new Access()))))));
 		when(accessMapperClientMock.getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "user3", ROLE)).thenReturn(null);
 
+		// manual1 and manual2 are manually created users and are kept, USER1 is both and is only listed once. The former
+		// manager and the member not being an AD account are replaced
+		when(supportManagementClientMock.getSubscriptionProfileMembers(MUNICIPALITY_ID, NAMESPACE, "profile-1")).thenReturn(List.of(
+			adAccount("manual1"),
+			adAccount("manual2"),
+			adAccount("USER1"),
+			adAccount("formerManager"),
+			adAccount(null),
+			new Identifier().type("partyId").value("manual1")));
+		when(supportManagementClientMock.getSubscriptionProfileMembers(MUNICIPALITY_ID, NAMESPACE, "profile-2")).thenReturn(null);
+
 		subscriberLoaderService.syncSubscribers(MUNICIPALITY_ID, NAMESPACE, roleProfiles);
 
 		verify(supportManagementClientMock).getSubscriptionProfiles(MUNICIPALITY_ID, NAMESPACE);
-		verify(accessMapperClientMock).getAccessUsers(MUNICIPALITY_ID, NAMESPACE, null);
+		verify(accessMapperClientMock).getAccessUsers(MUNICIPALITY_ID, NAMESPACE, AUTOMATIC);
+		verify(accessMapperClientMock).getAccessUsers(MUNICIPALITY_ID, NAMESPACE, MANUAL);
 		verify(accessMapperClientMock).getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "user1", ROLE);
 		verify(accessMapperClientMock).getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "user2", ROLE);
 		verify(accessMapperClientMock).getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "user3", ROLE);
-		verify(supportManagementClientMock).replaceSubscriptionProfileMembers(MUNICIPALITY_ID, NAMESPACE, "profile-1", List.of(adAccount("user1"), adAccount("user2")));
+		verify(supportManagementClientMock).getSubscriptionProfileMembers(MUNICIPALITY_ID, NAMESPACE, "profile-1");
+		verify(supportManagementClientMock).getSubscriptionProfileMembers(MUNICIPALITY_ID, NAMESPACE, "profile-2");
+		verify(supportManagementClientMock).replaceSubscriptionProfileMembers(MUNICIPALITY_ID, NAMESPACE, "profile-1",
+			List.of(adAccount("manual1"), adAccount("manual2"), adAccount("user1"), adAccount("user2")));
 		verify(supportManagementClientMock).replaceSubscriptionProfileMembers(MUNICIPALITY_ID, NAMESPACE, "profile-2", List.of(adAccount("user1")));
 		verifyNoMoreInteractions(accessMapperClientMock, supportManagementClientMock);
 	}
 
 	@Test
-	void syncSubscribersRemovesAllMembersWhenNoUserHoldsRole() {
+	void syncSubscribersRemovesAllMembersWhenNoManagerHoldsRole() {
 		when(supportManagementClientMock.getSubscriptionProfiles(MUNICIPALITY_ID, NAMESPACE)).thenReturn(List.of(
 			new SubscriptionProfile().id("profile-1").name("UNIT_MANAGER")));
-		when(accessMapperClientMock.getAccessUsers(MUNICIPALITY_ID, NAMESPACE, null)).thenReturn(List.of(new AccessUser().userId("user1")));
+		when(accessMapperClientMock.getAccessUsers(MUNICIPALITY_ID, NAMESPACE, AUTOMATIC)).thenReturn(List.of(new AccessUser().userId("user1")));
+		when(accessMapperClientMock.getAccessUsers(MUNICIPALITY_ID, NAMESPACE, MANUAL)).thenReturn(List.of());
 		when(accessMapperClientMock.getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "user1", ROLE)).thenReturn(List.of());
+		when(supportManagementClientMock.getSubscriptionProfileMembers(MUNICIPALITY_ID, NAMESPACE, "profile-1")).thenReturn(List.of(adAccount("formerManager")));
 
 		subscriberLoaderService.syncSubscribers(MUNICIPALITY_ID, NAMESPACE, Map.of("UNIT_MANAGER", "UNIT_MANAGER"));
 
 		verify(supportManagementClientMock).getSubscriptionProfiles(MUNICIPALITY_ID, NAMESPACE);
-		verify(accessMapperClientMock).getAccessUsers(MUNICIPALITY_ID, NAMESPACE, null);
+		verify(accessMapperClientMock).getAccessUsers(MUNICIPALITY_ID, NAMESPACE, AUTOMATIC);
+		verify(accessMapperClientMock).getAccessUsers(MUNICIPALITY_ID, NAMESPACE, MANUAL);
 		verify(accessMapperClientMock).getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "user1", ROLE);
+		verify(supportManagementClientMock).getSubscriptionProfileMembers(MUNICIPALITY_ID, NAMESPACE, "profile-1");
 		verify(supportManagementClientMock).replaceSubscriptionProfileMembers(MUNICIPALITY_ID, NAMESPACE, "profile-1", List.of());
 		verifyNoMoreInteractions(accessMapperClientMock, supportManagementClientMock);
 	}
@@ -128,8 +153,22 @@ class SubscriberLoaderServiceTest {
 	void syncSubscribersAbortsWhenRolesCannotBeRead() {
 		when(supportManagementClientMock.getSubscriptionProfiles(MUNICIPALITY_ID, NAMESPACE)).thenReturn(List.of(
 			new SubscriptionProfile().id("profile-1").name("UNIT_MANAGER")));
-		when(accessMapperClientMock.getAccessUsers(MUNICIPALITY_ID, NAMESPACE, null)).thenReturn(List.of(new AccessUser().userId("user1")));
+		when(accessMapperClientMock.getAccessUsers(MUNICIPALITY_ID, NAMESPACE, AUTOMATIC)).thenReturn(List.of(new AccessUser().userId("user1")));
 		when(accessMapperClientMock.getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "user1", ROLE)).thenThrow(Problem.valueOf(BAD_GATEWAY, "error"));
+
+		assertThatThrownBy(() -> subscriberLoaderService.syncSubscribers(MUNICIPALITY_ID, NAMESPACE, Map.of("UNIT_MANAGER", "UNIT_MANAGER")))
+			.isInstanceOf(Problem.class);
+
+		verify(supportManagementClientMock, never()).replaceSubscriptionProfileMembers(anyString(), anyString(), anyString(), any());
+	}
+
+	@Test
+	void syncSubscribersAbortsWhenMembersCannotBeRead() {
+		when(supportManagementClientMock.getSubscriptionProfiles(MUNICIPALITY_ID, NAMESPACE)).thenReturn(List.of(
+			new SubscriptionProfile().id("profile-1").name("UNIT_MANAGER")));
+		when(accessMapperClientMock.getAccessUsers(MUNICIPALITY_ID, NAMESPACE, AUTOMATIC)).thenReturn(List.of());
+		when(accessMapperClientMock.getAccessUsers(MUNICIPALITY_ID, NAMESPACE, MANUAL)).thenReturn(List.of(new AccessUser().userId("manual1")));
+		when(supportManagementClientMock.getSubscriptionProfileMembers(MUNICIPALITY_ID, NAMESPACE, "profile-1")).thenThrow(Problem.valueOf(BAD_GATEWAY, "error"));
 
 		assertThatThrownBy(() -> subscriberLoaderService.syncSubscribers(MUNICIPALITY_ID, NAMESPACE, Map.of("UNIT_MANAGER", "UNIT_MANAGER")))
 			.isInstanceOf(Problem.class);

@@ -43,16 +43,12 @@ scheduler:
         namespaces:
           HEALTHCAREDEVIATIONVOF:
             role-profiles:
-              LEX_RESPONSIBLE: LEX_RESPONSIBLE
               UNIT_MANAGER: UNIT_MANAGER
               HEAD_OF_OPERATIONS: HEAD_OF_OPERATIONS
-              MAR_MAS: MAR_MAS
           HEALTHCAREDEVIATIONIAF:
             role-profiles:
-              LEX_RESPONSIBLE: LEX_RESPONSIBLE
               UNIT_MANAGER: UNIT_MANAGER
               HEAD_OF_OPERATIONS: HEAD_OF_OPERATIONS
-              MAR_MAS: MAR_MAS
 spring:
   application:
     name: api-service-access-loader

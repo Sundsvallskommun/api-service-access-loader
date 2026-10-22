@@ -60,6 +60,64 @@ paths:
               schema:
                 $ref: "#/components/schemas/Problem"
   /{municipalityId}/{namespace}/subscription-profiles/{profileId}/members:
+    get:
+      tags:
+        - Subscription profiles
+      summary: List subscription profile members
+      description: List the principals holding a namespace subscription to the profile.
+      operationId: getSubscriptionProfileMembers
+      parameters:
+        - name: namespace
+          in: path
+          description: Namespace
+          required: true
+          schema:
+            type: string
+            pattern: "[\\w|\\-]+"
+          example: MY_NAMESPACE
+        - name: municipalityId
+          in: path
+          description: Municipality ID
+          required: true
+          schema:
+            type: string
+          example: 2281
+        - name: profileId
+          in: path
+          description: Subscription profile ID
+          required: true
+          schema:
+            type: string
+          example: 123e4567-e89b-12d3-a456-426614174000
+      responses:
+        "200":
+          description: Successful operation
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: "#/components/schemas/Identifier"
+        "404":
+          description: Not found
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
+        "400":
+          description: Bad request
+          content:
+            application/problem+json:
+              schema:
+                oneOf:
+                  - $ref: "#/components/schemas/Problem"
+                  - $ref: "#/components/schemas/ConstraintViolationProblem"
+        "500":
+          description: Internal Server error
+          content:
+            application/problem+json:
+              schema:
+                $ref: "#/components/schemas/Problem"
     put:
       tags:
         - Subscription profiles
