@@ -45,8 +45,9 @@ public class SubscriberLoaderService {
 	 * hold the role, or are no managers any more, lose their membership. Any failure aborts the sync of a profile before
 	 * its members are replaced, so that users are never removed from a profile because their roles could not be read.
 	 * <p>
-	 * Members that are manually created users in access-mapper (origin MANUAL) are kept, as they are managed by hand. Any
-	 * other member is replaced.
+	 * Members that are manually created users in access-mapper (origin MANUAL) are kept as long as they hold a role mapped
+	 * to the profile, as they are managed by hand. A manually created user is never added by the job, and loses the
+	 * membership once the role is gone, just as a manager does. Any other member is replaced.
 	 * <p>
 	 * The roleProfiles act as an allowlist: a role that is not configured is ignored even if a profile is named as it, and
 	 * a profile that no configured role is mapped to is never touched.
@@ -67,19 +68,22 @@ public class SubscriberLoaderService {
 			return;
 		}
 
+		// Roles are read once per user, as a user may be both a manager and a manually created user
+		final var rolesByUserId = new TreeMap<String, Set<String>>(String.CASE_INSENSITIVE_ORDER);
+
 		final var membersByProfileName = new LinkedHashMap<String, Set<String>>();
 		profileNameByRole.values().forEach(profileName -> membersByProfileName.putIfAbsent(profileName, newUserIdSet()));
 
-		getUserIds(municipalityId, namespace, ORIGIN_AUTOMATIC).forEach(userId -> getRoles(municipalityId, namespace, userId).stream()
-			.map(profileNameByRole::get)
-			.filter(Objects::nonNull)
+		getUserIds(municipalityId, namespace, ORIGIN_AUTOMATIC).forEach(userId -> getProfileNames(getRoles(municipalityId, namespace, userId, rolesByUserId), profileNameByRole)
 			.forEach(profileName -> membersByProfileName.get(profileName).add(userId)));
 
 		final var manualUserIds = getUserIds(municipalityId, namespace, ORIGIN_MANUAL);
 
 		membersByProfileName.forEach((profileName, userIds) -> {
 			final var profileId = profileIdsByName.get(profileName);
-			final var manualMembers = getManualMembers(municipalityId, namespace, profileId, manualUserIds);
+			final var manualMembers = getManualMembers(municipalityId, namespace, profileId, manualUserIds).stream()
+				.filter(userId -> getProfileNames(getRoles(municipalityId, namespace, userId, rolesByUserId), profileNameByRole).contains(profileName))
+				.toList();
 			userIds.addAll(manualMembers);
 
 			LOG.info("Replacing members of subscription profile '{}' with {} user(s), keeping {} manually created user(s)", profileName, userIds.size(), manualMembers.size());
@@ -99,6 +103,16 @@ public class SubscriberLoaderService {
 			.filter(Objects::nonNull)
 			.filter(manualUserIds::contains)
 			.toList();
+	}
+
+	/**
+	 * The names of the profiles the roles are mapped to.
+	 */
+	private static Set<String> getProfileNames(final Set<String> roles, final Map<String, String> profileNameByRole) {
+		return roles.stream()
+			.map(profileNameByRole::get)
+			.filter(Objects::nonNull)
+			.collect(Collectors.toSet());
 	}
 
 	private Map<String, String> getProfileIdsByName(final String municipalityId, final String namespace) {
@@ -140,9 +154,14 @@ public class SubscriberLoaderService {
 	}
 
 	/**
-	 * The role names held by the user - the patterns of the accesses of type role in the user's access groups.
+	 * The role names held by the user - the patterns of the accesses of type role in the user's access groups. Read once
+	 * per user and kept in rolesByUserId.
 	 */
-	private Set<String> getRoles(final String municipalityId, final String namespace, final String userId) {
+	private Set<String> getRoles(final String municipalityId, final String namespace, final String userId, final Map<String, Set<String>> rolesByUserId) {
+		return rolesByUserId.computeIfAbsent(userId, id -> readRoles(municipalityId, namespace, id));
+	}
+
+	private Set<String> readRoles(final String municipalityId, final String namespace, final String userId) {
 		return Optional.ofNullable(accessMapperClient.getAccessDetails(municipalityId, namespace, userId, ACCESS_TYPE_ROLE))
 			.orElse(List.of())
 			.stream()

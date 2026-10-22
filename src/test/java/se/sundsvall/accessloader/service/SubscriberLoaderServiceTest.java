@@ -70,7 +70,8 @@ class SubscriberLoaderServiceTest {
 		when(accessMapperClientMock.getAccessUsers(MUNICIPALITY_ID, NAMESPACE, MANUAL)).thenReturn(List.of(
 			new AccessUser().userId("manual1"),
 			new AccessUser().userId("MANUAL2"),
-			new AccessUser().userId("USER1")));
+			new AccessUser().userId("USER1"),
+			new AccessUser().userId("formerManagerWithManualPost")));
 
 		when(accessMapperClientMock.getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "user1", ROLE)).thenReturn(List.of(
 			accessGroup(ROLE, "UNIT_MANAGER"),
@@ -83,16 +84,21 @@ class SubscriberLoaderServiceTest {
 			new AccessGroup().accessByType(List.of(new AccessType().type(ROLE).access(List.of(new Access()))))));
 		when(accessMapperClientMock.getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "user3", ROLE)).thenReturn(null);
 
-		// manual1 and manual2 are manually created users and are kept, USER1 is both and is only listed once. The former
-		// manager and the member not being an AD account are replaced
+		// manual1 and manual2 are manually created users holding a role of the profile and are kept, USER1 is both a manager
+		// and a manually created user and is only listed once - its roles are read once. The former managers, also the one
+		// with a manually created post but no role of the profile, and the member not being an AD account are replaced
 		when(supportManagementClientMock.getSubscriptionProfileMembers(MUNICIPALITY_ID, NAMESPACE, "profile-1")).thenReturn(List.of(
 			adAccount("manual1"),
 			adAccount("manual2"),
 			adAccount("USER1"),
 			adAccount("formerManager"),
+			adAccount("formerManagerWithManualPost"),
 			adAccount(null),
 			new Identifier().type("partyId").value("manual1")));
 		when(supportManagementClientMock.getSubscriptionProfileMembers(MUNICIPALITY_ID, NAMESPACE, "profile-2")).thenReturn(null);
+		when(accessMapperClientMock.getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "manual1", ROLE)).thenReturn(List.of(accessGroup(ROLE, "UNIT_MANAGER")));
+		when(accessMapperClientMock.getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "manual2", ROLE)).thenReturn(List.of(accessGroup(ROLE, "HEAD_OF_OPERATIONS")));
+		when(accessMapperClientMock.getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "formerManagerWithManualPost", ROLE)).thenReturn(List.of(accessGroup(ROLE, "LEX_RESPONSIBLE")));
 
 		subscriberLoaderService.syncSubscribers(MUNICIPALITY_ID, NAMESPACE, roleProfiles);
 
@@ -102,6 +108,9 @@ class SubscriberLoaderServiceTest {
 		verify(accessMapperClientMock).getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "user1", ROLE);
 		verify(accessMapperClientMock).getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "user2", ROLE);
 		verify(accessMapperClientMock).getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "user3", ROLE);
+		verify(accessMapperClientMock).getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "manual1", ROLE);
+		verify(accessMapperClientMock).getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "manual2", ROLE);
+		verify(accessMapperClientMock).getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "formerManagerWithManualPost", ROLE);
 		verify(supportManagementClientMock).getSubscriptionProfileMembers(MUNICIPALITY_ID, NAMESPACE, "profile-1");
 		verify(supportManagementClientMock).getSubscriptionProfileMembers(MUNICIPALITY_ID, NAMESPACE, "profile-2");
 		verify(supportManagementClientMock).replaceSubscriptionProfileMembers(MUNICIPALITY_ID, NAMESPACE, "profile-1",
