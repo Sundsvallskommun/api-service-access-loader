@@ -17,6 +17,14 @@ scheduler:
           MY_NAMESPACE:
             org-ids:
               - 1
+  subscriberloader:
+    cron: '-'
+    municipalities:
+      '2281':
+        namespaces:
+          MY_NAMESPACE:
+            role-profiles:
+              ROLE_A: Profile A
 integration:
   mdviewer:
     url: http://localhost:8080
@@ -37,5 +45,12 @@ integration:
     oauth2-token-grant-url: http://localhost:8080/token
     oauth2-client-id: access-mapper-client-id
     oauth2-client-secret: access-mapper-client-secret
+    connect-timeout: 5
+    read-timeout: 30
+  support-management:
+    url: http://localhost:8080
+    oauth2-token-grant-url: http://localhost:8080/token
+    oauth2-client-id: support-management-client-id
+    oauth2-client-secret: support-management-client-secret
     connect-timeout: 5
     read-timeout: 30

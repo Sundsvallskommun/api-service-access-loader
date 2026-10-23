@@ -1,5 +1,6 @@
 package se.sundsvall.accessloader.integration.accessmapper;
 
+import generated.se.sundsvall.accessmapper.AccessGroup;
 import generated.se.sundsvall.accessmapper.AccessUser;
 import io.github.resilience4j.circuitbreaker.annotation.CircuitBreaker;
 import java.util.List;
@@ -47,4 +48,11 @@ public interface AccessMapperClient {
 		@PathVariable("municipalityId") final String municipalityId,
 		@PathVariable("namespace") final String namespace,
 		@PathVariable("id") final String id);
+
+	@GetMapping(path = "/{municipalityId}/{namespace}/access/ad/{adId}", produces = APPLICATION_JSON_VALUE)
+	List<AccessGroup> getAccessDetails(
+		@PathVariable("municipalityId") final String municipalityId,
+		@PathVariable("namespace") final String namespace,
+		@PathVariable("adId") final String adId,
+		@RequestParam(value = "type", required = false) final String type);
 }

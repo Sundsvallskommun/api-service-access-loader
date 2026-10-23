@@ -15,3 +15,11 @@ scheduler:
           MY_NAMESPACE:
             org-ids:
               - 1
+  subscriberloader:
+    cron: '-'
+    municipalities:
+      '2281':
+        namespaces:
+          MY_NAMESPACE:
+            role-profiles:
+              ROLE_A: Profile A

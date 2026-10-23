@@ -22,3 +22,8 @@ integration:
     oauth2-token-grant-url: http://localhost/token
     oauth2-client-id: test
     oauth2-client-secret: test
+  support-management:
+    url: http://localhost
+    oauth2-token-grant-url: http://localhost/token
+    oauth2-client-id: test
+    oauth2-client-secret: test
