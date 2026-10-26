@@ -52,5 +52,6 @@ integration:
     oauth2-token-grant-url: http://localhost:8080/token
     oauth2-client-id: support-management-client-id
     oauth2-client-secret: support-management-client-secret
+    sent-by: support-management-sent-by
     connect-timeout: 5
     read-timeout: 30

@@ -1,5 +1,7 @@
 package se.sundsvall.accessloader.integration.supportmanagement.configuration;
 
+import feign.RequestInterceptor;
+import feign.RequestTemplate;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.ArgumentCaptor;
@@ -20,6 +22,7 @@ import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import static se.sundsvall.accessloader.integration.supportmanagement.configuration.SupportManagementConfiguration.CLIENT_ID;
+import static se.sundsvall.dept44.support.Identifier.HEADER_NAME;
 
 @ExtendWith(MockitoExtension.class)
 class SupportManagementConfigurationTest {
@@ -46,6 +49,7 @@ class SupportManagementConfigurationTest {
 		when(clientRegistrationRepositoryMock.findByRegistrationId(any())).thenReturn(clientRegistrationMock);
 		when(propertiesMock.connectTimeout()).thenReturn(1);
 		when(propertiesMock.readTimeout()).thenReturn(2);
+		when(propertiesMock.sentBy()).thenReturn("svc01acc");
 		when(feignMultiCustomizerSpy.composeCustomizersToOne()).thenReturn(feignBuilderCustomizerMock);
 
 		try (final MockedStatic<FeignMultiCustomizer> feignMultiCustomizerMock = Mockito.mockStatic(FeignMultiCustomizer.class)) {
@@ -54,8 +58,11 @@ class SupportManagementConfigurationTest {
 			final var customizer = configuration.feignBuilderCustomizer(propertiesMock, clientRegistrationRepositoryMock);
 
 			final ArgumentCaptor<ProblemErrorDecoder> errorDecoderCaptor = ArgumentCaptor.forClass(ProblemErrorDecoder.class);
+			final ArgumentCaptor<RequestInterceptor> requestInterceptorCaptor = ArgumentCaptor.forClass(RequestInterceptor.class);
 
 			verify(feignMultiCustomizerSpy).withErrorDecoder(errorDecoderCaptor.capture());
+			verify(feignMultiCustomizerSpy).withRequestInterceptor(requestInterceptorCaptor.capture());
+			verify(propertiesMock).sentBy();
 			verify(clientRegistrationRepositoryMock).findByRegistrationId(CLIENT_ID);
 			verify(feignMultiCustomizerSpy).withRetryableOAuth2InterceptorForClientRegistration(same(clientRegistrationMock));
 			verify(propertiesMock).connectTimeout();
@@ -65,6 +72,11 @@ class SupportManagementConfigurationTest {
 
 			assertThat(errorDecoderCaptor.getValue()).hasFieldOrPropertyWithValue("integrationName", CLIENT_ID);
 			assertThat(customizer).isSameAs(feignBuilderCustomizerMock);
+
+			// The configured identity replaces any identity of a calling user
+			final var template = new RequestTemplate().header(HEADER_NAME, "joe01doe; type=adAccount");
+			requestInterceptorCaptor.getValue().apply(template);
+			assertThat(template.headers().get(HEADER_NAME)).containsExactly("svc01acc; type=adAccount");
 		}
 	}
 }
