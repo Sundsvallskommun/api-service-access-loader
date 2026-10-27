@@ -1,0 +1,29 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-access-mapper/2281/MY_NAMESPACE/access-config/user",
+		"queryParameters": {
+			"origin": {
+				"equalTo": "MANUAL"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"status": 200,
+		"jsonBody": [
+			{
+				"id": "a1b2c3d4-0000-4000-8000-000000000011",
+				"userId": "manual01",
+				"origin": "MANUAL"
+			},
+			{
+				"id": "a1b2c3d4-0000-4000-8000-000000000012",
+				"userId": "manual02",
+				"origin": "MANUAL"
+			}
+		]
+	}
+}

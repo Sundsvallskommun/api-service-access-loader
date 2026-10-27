@@ -1,0 +1,31 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-employee/2281/employments",
+		"queryParameters": {
+			"PersonId": {
+				"equalTo": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"status": 200,
+		"jsonBody": [
+			{
+				"personId": "bbbbbbbb-bbbb-4bbb-8bbb-bbbbbbbbbbbb",
+				"employments": [
+					{
+						"isMainEmployment": true,
+						"manager": {
+							"personId": "cccccccc-cccc-4ccc-8ccc-cccccccccccc",
+							"loginname": "boss01"
+						}
+					}
+				]
+			}
+		]
+	}
+}

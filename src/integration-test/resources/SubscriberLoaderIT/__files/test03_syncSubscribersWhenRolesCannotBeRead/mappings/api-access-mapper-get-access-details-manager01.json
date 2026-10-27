@@ -1,0 +1,22 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-access-mapper/2281/MY_NAMESPACE/access/ad/manager01",
+		"queryParameters": {
+			"type": {
+				"equalTo": "role"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/problem+json"
+		},
+		"status": 500,
+		"jsonBody": {
+			"title": "Internal Server Error",
+			"status": 500,
+			"detail": "Active directory is not available"
+		}
+	}
+}

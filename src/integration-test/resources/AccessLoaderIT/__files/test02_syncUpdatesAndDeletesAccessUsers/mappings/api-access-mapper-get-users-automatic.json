@@ -1,0 +1,71 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-access-mapper/2281/MY_NAMESPACE/access-config/user",
+		"queryParameters": {
+			"origin": {
+				"equalTo": "AUTOMATIC"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"status": 200,
+		"jsonBody": [
+			{
+				"id": "d1d1d1d1-0000-4000-8000-000000000001",
+				"userId": "manager01",
+				"origin": "AUTOMATIC",
+				"accessByType": [
+					{
+						"type": "label",
+						"access": [
+							{
+								"pattern": "LOCATION/1/99/**",
+								"accessLevel": "R"
+							}
+						]
+					}
+				]
+			},
+			{
+				"id": "d1d1d1d1-0000-4000-8000-000000000002",
+				"userId": "stale01",
+				"origin": "AUTOMATIC",
+				"accessByType": [
+					{
+						"type": "label",
+						"access": [
+							{
+								"pattern": "LOCATION/1/12/**",
+								"accessLevel": "R"
+							}
+						]
+					}
+				]
+			},
+			{
+				"id": "d1d1d1d1-0000-4000-8000-000000000003",
+				"userId": "mixed01",
+				"origin": "AUTOMATIC",
+				"accessByType": [
+					{
+						"type": "label",
+						"access": [
+							{
+								"pattern": "LOCATION/1/12/**",
+								"accessLevel": "R"
+							},
+							{
+								"pattern": "LOCATION/2/20/**",
+								"accessLevel": "RW"
+							}
+						]
+					}
+				]
+			}
+		]
+	}
+}

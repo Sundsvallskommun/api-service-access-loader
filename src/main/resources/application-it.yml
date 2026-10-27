@@ -6,6 +6,7 @@ logging:
     root: DEBUG
 accessloader:
   access-level: R
+# The jobs are triggered by the IT tests, for fictive namespaces
 scheduler:
   accessloader:
     cron: '-'
@@ -22,4 +23,37 @@ scheduler:
         namespaces:
           MY_NAMESPACE:
             role-profiles:
-              ROLE_A: Profile A
+              UNIT_MANAGER: UNIT_MANAGER
+              HEAD_OF_OPERATIONS: HEAD_OF_OPERATIONS
+          MY_OTHER_NAMESPACE:
+            role-profiles:
+              UNIT_MANAGER: UNIT_MANAGER
+              HEAD_OF_OPERATIONS: HEAD_OF_OPERATIONS
+spring:
+  datasource:
+    driver-class-name: org.testcontainers.jdbc.ContainerDatabaseDriver
+    url: jdbc:tc:mariadb:10.6:///ittest
+  flyway:
+    enabled: true
+integration:
+  mdviewer:
+    url: http://localhost:${wiremock.server.port:}/api-mdviewer
+    oauth2-token-grant-url: http://localhost:${wiremock.server.port:}/api-gateway/token
+    oauth2-client-id: the-client-id
+    oauth2-client-secret: the-client-secret
+  employee:
+    url: http://localhost:${wiremock.server.port:}/api-employee
+    oauth2-token-grant-url: http://localhost:${wiremock.server.port:}/api-gateway/token
+    oauth2-client-id: the-client-id
+    oauth2-client-secret: the-client-secret
+  access-mapper:
+    url: http://localhost:${wiremock.server.port:}/api-access-mapper
+    oauth2-token-grant-url: http://localhost:${wiremock.server.port:}/api-gateway/token
+    oauth2-client-id: the-client-id
+    oauth2-client-secret: the-client-secret
+  support-management:
+    url: http://localhost:${wiremock.server.port:}/api-support-management
+    oauth2-token-grant-url: http://localhost:${wiremock.server.port:}/api-gateway/token
+    oauth2-client-id: the-client-id
+    oauth2-client-secret: the-client-secret
+    sent-by: it-sent-by

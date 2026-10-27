@@ -1,0 +1,17 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-mdviewer/12/employees"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"status": 200,
+		"jsonBody": [
+			{
+				"personId": "22222222-2222-4222-8222-222222222222"
+			}
+		]
+	}
+}

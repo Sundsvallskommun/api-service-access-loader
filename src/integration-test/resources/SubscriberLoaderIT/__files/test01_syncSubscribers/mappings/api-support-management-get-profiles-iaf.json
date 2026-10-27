@@ -1,0 +1,18 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-support-management/2281/MY_OTHER_NAMESPACE/subscription-profiles",
+		"headers": {
+			"X-Sent-By": {
+				"equalTo": "it-sent-by; type=adAccount"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"status": 200,
+		"jsonBody": []
+	}
+}

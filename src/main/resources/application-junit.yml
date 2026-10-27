@@ -1,4 +1,3 @@
-
 #========================================
 # Test profile settings (junit tests)
 #========================================
@@ -19,12 +18,6 @@ scheduler:
               - 1
   subscriberloader:
     cron: '-'
-    municipalities:
-      '2281':
-        namespaces:
-          MY_NAMESPACE:
-            role-profiles:
-              ROLE_A: Profile A
 integration:
   mdviewer:
     url: http://localhost:8080
