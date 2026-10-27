@@ -1,0 +1,9 @@
+{
+	"request": {
+		"method": "DELETE",
+		"urlPath": "/api-access-mapper/2281/MY_NAMESPACE/access-config/user/d1d1d1d1-0000-4000-8000-000000000002"
+	},
+	"response": {
+		"status": 204
+	}
+}

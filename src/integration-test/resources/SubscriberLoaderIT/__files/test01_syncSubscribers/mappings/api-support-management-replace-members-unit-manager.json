@@ -1,0 +1,29 @@
+{
+	"request": {
+		"method": "PUT",
+		"urlPath": "/api-support-management/2281/MY_NAMESPACE/subscription-profiles/0d6c5f8a-3a1e-4b6e-9a51-1f2d3c4b5a61/members",
+		"headers": {
+			"X-Sent-By": {
+				"equalTo": "it-sent-by; type=adAccount"
+			}
+		},
+		"bodyPatterns": [
+			{
+				"equalToJson": [
+					{
+						"type": "adAccount",
+						"value": "manager01"
+					},
+					{
+						"type": "adAccount",
+						"value": "manual01"
+					}
+				],
+				"ignoreArrayOrder": true
+			}
+		]
+	},
+	"response": {
+		"status": 204
+	}
+}

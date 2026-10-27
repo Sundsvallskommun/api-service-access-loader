@@ -1,0 +1,18 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-employee/2281/employments",
+		"queryParameters": {
+			"PersonId": {
+				"equalTo": "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"status": 200,
+		"jsonBody": []
+	}
+}

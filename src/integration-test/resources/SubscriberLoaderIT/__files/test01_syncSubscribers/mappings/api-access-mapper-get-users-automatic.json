@@ -1,0 +1,34 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-access-mapper/2281/MY_NAMESPACE/access-config/user",
+		"queryParameters": {
+			"origin": {
+				"equalTo": "AUTOMATIC"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"status": 200,
+		"jsonBody": [
+			{
+				"id": "a1b2c3d4-0000-4000-8000-000000000001",
+				"userId": "manager01",
+				"origin": "AUTOMATIC"
+			},
+			{
+				"id": "a1b2c3d4-0000-4000-8000-000000000002",
+				"userId": "manager02",
+				"origin": "AUTOMATIC"
+			},
+			{
+				"id": "a1b2c3d4-0000-4000-8000-000000000003",
+				"userId": "manager03",
+				"origin": "AUTOMATIC"
+			}
+		]
+	}
+}
