@@ -1,10 +1,13 @@
 package se.sundsvall.accessloader.apptest;
 
 import org.junit.jupiter.api.Test;
+import org.springframework.beans.factory.annotation.Autowired;
 import se.sundsvall.accessloader.Application;
+import se.sundsvall.dept44.scheduling.health.Dept44CompositeHealthContributor;
 import se.sundsvall.dept44.test.AbstractAppTest;
 import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.http.HttpMethod.POST;
 import static org.springframework.http.HttpStatus.NO_CONTENT;
 
@@ -19,6 +22,10 @@ import static org.springframework.http.HttpStatus.NO_CONTENT;
 class SubscriberLoaderIT extends AbstractAppTest {
 
 	private static final String PATH = "/sync-subscribers";
+	private static final String SCHEDULER_NAME = "subscriber-loader";
+
+	@Autowired
+	private Dept44CompositeHealthContributor schedulerHealth;
 
 	/**
 	 * MY_NAMESPACE: manager01 (UNIT_MANAGER) and manager02 (HEAD_OF_OPERATIONS) are made members, manager03 holds no role.
@@ -51,7 +58,7 @@ class SubscriberLoaderIT extends AbstractAppTest {
 
 	/**
 	 * The roles of manager01 in MY_NAMESPACE cannot be read, so no members are replaced there - no replace is stubbed. The
-	 * job still goes on with MY_OTHER_NAMESPACE.
+	 * job still goes on with MY_OTHER_NAMESPACE, and the failure of MY_NAMESPACE is reported in the scheduler health.
 	 */
 	@Test
 	void test03_syncSubscribersWhenRolesCannotBeRead() {
@@ -61,5 +68,9 @@ class SubscriberLoaderIT extends AbstractAppTest {
 			.withExpectedResponseStatus(NO_CONTENT)
 			.withExpectedResponseBodyIsNull()
 			.sendRequestAndVerifyResponse();
+
+		final var health = schedulerHealth.getOrCreateIndicator(SCHEDULER_NAME).health();
+		assertThat(health.getStatus().getCode()).isEqualTo("RESTRICTED");
+		assertThat(health.getDetails()).containsEntry("Reason", "Syncing subscribers failed for namespace(s): 2281/MY_NAMESPACE");
 	}
 }

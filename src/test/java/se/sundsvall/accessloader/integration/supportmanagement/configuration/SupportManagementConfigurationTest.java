@@ -4,6 +4,9 @@ import feign.RequestInterceptor;
 import feign.RequestTemplate;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.NullAndEmptySource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.ArgumentCaptor;
 import org.mockito.Mock;
 import org.mockito.MockedStatic;
@@ -44,12 +47,37 @@ class SupportManagementConfigurationTest {
 
 	@Test
 	void testFeignBuilderCustomizer() {
+		final var requestInterceptor = createRequestInterceptor("svc01acc");
+
+		// Without a calling user, the service acts as the configured identity
+		final var templateWithoutCaller = new RequestTemplate();
+		requestInterceptor.apply(templateWithoutCaller);
+		assertThat(templateWithoutCaller.headers().get(HEADER_NAME)).containsExactly("svc01acc; type=adAccount");
+
+		// A calling user keeps its own identity
+		final var templateWithCaller = new RequestTemplate().header(HEADER_NAME, "joe01doe; type=adAccount");
+		requestInterceptor.apply(templateWithCaller);
+		assertThat(templateWithCaller.headers().get(HEADER_NAME)).containsExactly("joe01doe; type=adAccount");
+	}
+
+	@ParameterizedTest
+	@NullAndEmptySource
+	@ValueSource(strings = " ")
+	void testFeignBuilderCustomizerWithoutSentBy(final String sentBy) {
+		final var requestInterceptor = createRequestInterceptor(sentBy);
+
+		final var template = new RequestTemplate();
+		requestInterceptor.apply(template);
+		assertThat(template.headers()).doesNotContainKey(HEADER_NAME);
+	}
+
+	private RequestInterceptor createRequestInterceptor(final String sentBy) {
 		final var configuration = new SupportManagementConfiguration();
 
 		when(clientRegistrationRepositoryMock.findByRegistrationId(any())).thenReturn(clientRegistrationMock);
 		when(propertiesMock.connectTimeout()).thenReturn(1);
 		when(propertiesMock.readTimeout()).thenReturn(2);
-		when(propertiesMock.sentBy()).thenReturn("svc01acc");
+		when(propertiesMock.sentBy()).thenReturn(sentBy);
 		when(feignMultiCustomizerSpy.composeCustomizersToOne()).thenReturn(feignBuilderCustomizerMock);
 
 		try (final MockedStatic<FeignMultiCustomizer> feignMultiCustomizerMock = Mockito.mockStatic(FeignMultiCustomizer.class)) {
@@ -73,10 +101,7 @@ class SupportManagementConfigurationTest {
 			assertThat(errorDecoderCaptor.getValue()).hasFieldOrPropertyWithValue("integrationName", CLIENT_ID);
 			assertThat(customizer).isSameAs(feignBuilderCustomizerMock);
 
-			// The configured identity replaces any identity of a calling user
-			final var template = new RequestTemplate().header(HEADER_NAME, "joe01doe; type=adAccount");
-			requestInterceptorCaptor.getValue().apply(template);
-			assertThat(template.headers().get(HEADER_NAME)).containsExactly("svc01acc; type=adAccount");
+			return requestInterceptorCaptor.getValue();
 		}
 	}
 }

@@ -8,26 +8,31 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.resttestclient.TestRestTemplate;
+import org.springframework.boot.resttestclient.autoconfigure.AutoConfigureTestRestTemplate;
+import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.boot.test.context.SpringBootTest.WebEnvironment;
 import org.springframework.core.io.Resource;
-import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.test.context.ActiveProfiles;
 import se.sundsvall.accessloader.Application;
-import se.sundsvall.dept44.test.annotation.wiremock.WireMockAppTestSuite;
 import se.sundsvall.dept44.util.ResourceUtils;
 import tools.jackson.dataformat.yaml.YAMLMapper;
 
 import static java.nio.file.Files.writeString;
 import static net.javacrumbs.jsonunit.assertj.JsonAssertions.assertThatJson;
 
-@WireMockAppTestSuite(files = "classpath:/OpenApiSpecificationIT/", classes = Application.class)
+@ActiveProfiles("it")
+@AutoConfigureTestRestTemplate
+@SpringBootTest(
+	webEnvironment = WebEnvironment.RANDOM_PORT,
+	classes = Application.class,
+	properties = {
+		"spring.main.banner-mode=off",
+		"logging.level.se.sundsvall.dept44.payload=OFF",
+		"wiremock.server.port=10101"
+	})
 class OpenApiSpecificationIT {
 
 	private static final YAMLMapper YAML_MAPPER = new YAMLMapper();
-
-	@Value("${openapi.name}")
-	private String openApiName;
-
-	@Value("${openapi.version}")
-	private String openApiVersion;
 
 	@Value("classpath:/api/openapi.yaml")
 	private Resource openApiResource;
@@ -55,11 +60,7 @@ class OpenApiSpecificationIT {
 	 * @return the current OpenAPI specification
 	 */
 	private String getCurrentOpenApiSpecification() {
-		final var uri = UriComponentsBuilder.fromPath("/api-docs.yaml")
-			.buildAndExpand(openApiName, openApiVersion)
-			.toUri();
-
-		return restTemplate.getForObject(uri, String.class);
+		return restTemplate.getForObject("/api-docs.yaml", String.class);
 	}
 
 	/**
