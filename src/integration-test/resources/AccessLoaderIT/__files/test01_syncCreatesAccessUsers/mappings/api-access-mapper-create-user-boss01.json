@@ -1,0 +1,33 @@
+{
+	"request": {
+		"method": "POST",
+		"urlPath": "/api-access-mapper/2281/MY_NAMESPACE/access-config/user",
+		"bodyPatterns": [
+			{
+				"equalToJson": {
+					"userId": "boss01",
+					"origin": "AUTOMATIC",
+					"accessByType": [
+						{
+							"type": "label",
+							"access": [
+								{
+									"pattern": "LOCATION/1/11/**",
+									"accessLevel": "R"
+								},
+								{
+									"pattern": "LOCATION/1/12/**",
+									"accessLevel": "R"
+								}
+							]
+						}
+					]
+				},
+				"ignoreArrayOrder": true
+			}
+		]
+	},
+	"response": {
+		"status": 201
+	}
+}

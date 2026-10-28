@@ -1,0 +1,33 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-access-mapper/2281/MY_NAMESPACE/access/ad/manager01",
+		"queryParameters": {
+			"type": {
+				"equalTo": "role"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"status": 200,
+		"jsonBody": [
+			{
+				"groupId": "manager01",
+				"accessByType": [
+					{
+						"type": "role",
+						"access": [
+							{
+								"pattern": "UNIT_MANAGER",
+								"accessLevel": "R"
+							}
+						]
+					}
+				]
+			}
+		]
+	}
+}

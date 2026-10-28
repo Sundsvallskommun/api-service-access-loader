@@ -1,0 +1,29 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-mdviewer/1/orgtree"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"status": 200,
+		"jsonBody": {
+			"orgId": 1,
+			"treeLevel": 2,
+			"orgName": "Förvaltning",
+			"organizations": [
+				{
+					"orgId": 11,
+					"treeLevel": 6,
+					"orgName": "Enhet 11"
+				},
+				{
+					"orgId": 12,
+					"treeLevel": 6,
+					"orgName": "Enhet 12"
+				}
+			]
+		}
+	}
+}

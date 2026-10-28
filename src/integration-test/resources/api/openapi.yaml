@@ -1,0 +1,55 @@
+openapi: 3.1.0
+info:
+  title: api-service-access-loader
+  contact: {}
+  license:
+    name: MIT License
+    url: https://opensource.org/licenses/MIT
+  version: "1.1"
+servers:
+- url: http://localhost:50128
+  description: Generated server url
+tags:
+- name: Access Loader
+  description: Triggers the access loader sync job
+- name: Subscriber Loader
+  description: Triggers the subscriber loader sync job
+paths:
+  /sync:
+    post:
+      tags:
+      - Access Loader
+      summary: Trigger access loader sync
+      description: Triggers the access loader sync job manually
+      operationId: sync
+      responses:
+        "204":
+          description: Sync triggered successfully
+  /sync-subscribers:
+    post:
+      tags:
+      - Subscriber Loader
+      summary: Trigger subscriber loader sync
+      description: Triggers the subscriber loader sync job manually
+      operationId: syncSubscribers
+      responses:
+        "204":
+          description: Sync triggered successfully
+  /api-docs:
+    get:
+      tags:
+      - API
+      summary: OpenAPI
+      operationId: getApiDocs
+      responses:
+        "200":
+          description: OK
+          content:
+            application/yaml:
+              schema:
+                type: string
+      x-auth-type: None
+      x-throttling-tier: Unlimited
+      x-wso2-mutual-ssl: Optional
+components:
+  securitySchemes: {}

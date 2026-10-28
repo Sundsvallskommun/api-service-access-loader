@@ -1,0 +1,13 @@
+{
+	"request": {
+		"method": "POST",
+		"urlPath": "/api-gateway/token"
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"bodyFileName": "common/api-gateway-token-response.json",
+		"status": 200
+	}
+}

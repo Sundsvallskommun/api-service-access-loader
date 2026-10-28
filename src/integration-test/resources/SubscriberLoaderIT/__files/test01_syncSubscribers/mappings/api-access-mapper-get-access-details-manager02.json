@@ -1,0 +1,37 @@
+{
+	"request": {
+		"method": "GET",
+		"urlPath": "/api-access-mapper/2281/MY_NAMESPACE/access/ad/manager02",
+		"queryParameters": {
+			"type": {
+				"equalTo": "role"
+			}
+		}
+	},
+	"response": {
+		"headers": {
+			"Content-Type": "application/json"
+		},
+		"status": 200,
+		"jsonBody": [
+			{
+				"groupId": "0f1e2d3c-4b5a-4968-8776-655443322110",
+				"accessByType": [
+					{
+						"type": "role",
+						"access": [
+							{
+								"pattern": "HEAD_OF_OPERATIONS",
+								"accessLevel": "R"
+							},
+							{
+								"pattern": "LEX_INVESTIGATOR",
+								"accessLevel": "R"
+							}
+						]
+					}
+				]
+			}
+		]
+	}
+}
