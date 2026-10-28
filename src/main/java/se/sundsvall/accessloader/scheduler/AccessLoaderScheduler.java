@@ -1,5 +1,6 @@
 package se.sundsvall.accessloader.scheduler;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -18,6 +19,8 @@ public class AccessLoaderScheduler {
 
 	private static final Logger LOG = LoggerFactory.getLogger(AccessLoaderScheduler.class);
 
+	private static final String FAILED_NAMESPACES_MESSAGE = "Syncing access users failed for namespace(s): %s";
+
 	private final AccessLoaderService accessLoaderService;
 	private final SchedulerProperties schedulerProperties;
 
@@ -26,6 +29,10 @@ public class AccessLoaderScheduler {
 		this.schedulerProperties = schedulerProperties;
 	}
 
+	/**
+	 * Syncs every configured namespace. A failing namespace does not stop the others, but the run fails once all have been
+	 * synced, so that the scheduler health reports the failure.
+	 */
 	@Dept44Scheduled(
 		cron = "${scheduler.accessloader.cron}",
 		name = "${scheduler.accessloader.name}",
@@ -33,6 +40,8 @@ public class AccessLoaderScheduler {
 		maximumExecutionTime = "${scheduler.accessloader.maximum-execution-time}")
 	public void execute() {
 		LOG.info("Starting access loader job");
+
+		final var failedNamespaces = new ArrayList<String>();
 
 		Optional.ofNullable(schedulerProperties.municipalities()).orElse(Map.of()).forEach((municipalityId, municipalityConfig) -> {
 			LOG.info("Processing municipalityId: {}", municipalityId);
@@ -51,11 +60,16 @@ public class AccessLoaderScheduler {
 					accessLoaderService.syncAccessUsers(municipalityId, namespace, orgIds);
 				} catch (final Exception e) {
 					LOG.error("Error syncing access users for municipalityId: {}, namespace: {}", municipalityId, namespace, e);
+					failedNamespaces.add(municipalityId + "/" + namespace);
 				} finally {
 					RequestId.reset();
 				}
 			});
 		});
+
+		if (!failedNamespaces.isEmpty()) {
+			throw new IllegalStateException(FAILED_NAMESPACES_MESSAGE.formatted(String.join(", ", failedNamespaces)));
+		}
 
 		LOG.info("Access loader job completed");
 	}

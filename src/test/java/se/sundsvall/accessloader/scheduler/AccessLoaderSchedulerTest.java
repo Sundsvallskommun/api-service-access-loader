@@ -13,6 +13,8 @@ import se.sundsvall.accessloader.configuration.SchedulerProperties.MunicipalityC
 import se.sundsvall.accessloader.configuration.SchedulerProperties.NamespaceConfig;
 import se.sundsvall.accessloader.service.AccessLoaderService;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
+import static org.mockito.Mockito.lenient;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.verifyNoMoreInteractions;
@@ -47,6 +49,26 @@ class AccessLoaderSchedulerTest {
 		verify(accessLoaderService).syncAccessUsers("2281", "NS_A", orgIds1);
 		verify(accessLoaderService).syncAccessUsers("2262", "NS_B", orgIds2);
 		verifyNoMoreInteractions(accessLoaderService, schedulerProperties);
+	}
+
+	@Test
+	void executeContinuesWhenNamespaceFails() {
+		final var orgIds1 = List.of(1, 2);
+		final var orgIds2 = List.of(3);
+
+		when(schedulerProperties.municipalities()).thenReturn(Map.of(
+			"2281", new MunicipalityConfig(Map.of("NS_A", new NamespaceConfig(orgIds1))),
+			"2262", new MunicipalityConfig(Map.of("NS_B", new NamespaceConfig(orgIds2)))));
+		lenient().doThrow(new RuntimeException("error")).when(accessLoaderService).syncAccessUsers("2281", "NS_A", orgIds1);
+
+		// The run fails after all namespaces are synced, so that the scheduler health reports it
+		assertThatThrownBy(scheduler::execute)
+			.isInstanceOf(IllegalStateException.class)
+			.hasMessage("Syncing access users failed for namespace(s): 2281/NS_A");
+
+		verify(accessLoaderService).syncAccessUsers("2281", "NS_A", orgIds1);
+		verify(accessLoaderService).syncAccessUsers("2262", "NS_B", orgIds2);
+		verifyNoMoreInteractions(accessLoaderService);
 	}
 
 	@Test
