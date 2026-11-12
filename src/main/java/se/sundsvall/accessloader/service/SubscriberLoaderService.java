@@ -21,13 +21,14 @@ import org.springframework.stereotype.Service;
 import se.sundsvall.accessloader.integration.accessmapper.AccessMapperClient;
 import se.sundsvall.accessloader.integration.supportmanagement.SupportManagementClient;
 
+import static generated.se.sundsvall.supportmanagement.Identifier.TypeEnum.AD_ACCOUNT;
+
 @Service
 public class SubscriberLoaderService {
 
 	private static final Logger LOG = LoggerFactory.getLogger(SubscriberLoaderService.class);
 
 	private static final String ACCESS_TYPE_ROLE = "role";
-	private static final String IDENTIFIER_TYPE_AD_ACCOUNT = "adAccount";
 	private static final String ORIGIN_AUTOMATIC = "AUTOMATIC";
 	private static final String ORIGIN_MANUAL = "MANUAL";
 
@@ -98,7 +99,7 @@ public class SubscriberLoaderService {
 		return Optional.ofNullable(supportManagementClient.getSubscriptionProfileMembers(municipalityId, namespace, profileId))
 			.orElse(List.of())
 			.stream()
-			.filter(member -> IDENTIFIER_TYPE_AD_ACCOUNT.equals(member.getType()))
+			.filter(member -> AD_ACCOUNT == member.getType())
 			.map(Identifier::getValue)
 			.filter(Objects::nonNull)
 			.filter(manualUserIds::contains)
@@ -179,7 +180,7 @@ public class SubscriberLoaderService {
 
 	private static List<Identifier> toIdentifiers(final Set<String> userIds) {
 		return userIds.stream()
-			.map(userId -> new Identifier().type(IDENTIFIER_TYPE_AD_ACCOUNT).value(userId))
+			.map(userId -> new Identifier().type(AD_ACCOUNT).value(userId))
 			.toList();
 	}
 }
