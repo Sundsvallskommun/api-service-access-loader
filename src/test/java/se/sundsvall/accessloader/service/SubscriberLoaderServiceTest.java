@@ -18,6 +18,8 @@ import se.sundsvall.accessloader.integration.accessmapper.AccessMapperClient;
 import se.sundsvall.accessloader.integration.supportmanagement.SupportManagementClient;
 import se.sundsvall.dept44.problem.Problem;
 
+import static generated.se.sundsvall.supportmanagement.Identifier.TypeEnum.AD_ACCOUNT;
+import static generated.se.sundsvall.supportmanagement.Identifier.TypeEnum.PARTY_ID;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.anyString;
@@ -94,7 +96,7 @@ class SubscriberLoaderServiceTest {
 			adAccount("formerManager"),
 			adAccount("formerManagerWithManualPost"),
 			adAccount(null),
-			new Identifier().type("partyId").value("manual1")));
+			new Identifier().type(PARTY_ID).value("manual1")));
 		when(supportManagementClientMock.getSubscriptionProfileMembers(MUNICIPALITY_ID, NAMESPACE, "profile-2")).thenReturn(null);
 		when(accessMapperClientMock.getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "manual1", ROLE)).thenReturn(List.of(accessGroup(ROLE, "UNIT_MANAGER")));
 		when(accessMapperClientMock.getAccessDetails(MUNICIPALITY_ID, NAMESPACE, "manual2", ROLE)).thenReturn(List.of(accessGroup(ROLE, "HEAD_OF_OPERATIONS")));
@@ -194,6 +196,6 @@ class SubscriberLoaderServiceTest {
 	}
 
 	private static Identifier adAccount(final String userId) {
-		return new Identifier().type("adAccount").value(userId);
+		return new Identifier().type(AD_ACCOUNT).value(userId);
 	}
 }
